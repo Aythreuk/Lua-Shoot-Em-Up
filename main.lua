@@ -6,6 +6,14 @@
 
 -- Load libraries and modules
 local widget = require("widget")
+local physics = require("physics")
+local math = require("math")
+local timer = require("timer")
+
+-- Initialization
+math.randomseed(os.time())
+physics.start()
+physics.setGravity(0, 0)
 
 -- Display groups etc.
 local displayGroup1 = display.newGroup()
@@ -171,3 +179,50 @@ sprite.yScale = 0.50
 sprite:setSequence("clockFwd")
 sprite:play()
 sprite:addEventListener("touch", clockDirecChange)
+
+-- Let's get the circle moving around
+local function moveCirc ()
+local a = math.random(1, 4)
+if (a == 1) then
+print("To the north!")
+circleEnemy:setLinearVelocity(0, -1000)
+elseif (a == 2) then
+print("To the east!")
+circleEnemy:setLinearVelocity(1000, 0)
+elseif (a == 3) then
+print("To the south!")
+circleEnemy:setLinearVelocity(0, 1000)
+elseif (a == 4) then
+print("To the west!")
+circleEnemy:setLinearVelocity(-1000, 0)
+end
+timer.performWithDelay((math.random(1, 5) * 1000), moveCirc)
+end
+timer.performWithDelay((math.random(1, 5) * 1000), moveCirc)
+
+-- Let's create a circle
+circleEnemy = display.newCircle(800, 100, 50)
+circleEnemy:setFillColor(1, 0, 0)
+physics.addBody(circleEnemy, "dynamic")
+
+-- Guide circle back onto the screen
+local function checkCirc ()
+if (circleEnemy.x < 0) then
+circleEnemy:setLinearVelocity(1000, 0)
+timer.performWithDelay((math.random(1, 5) * 1000), moveCirc)
+elseif (circleEnemy.x > display.contentWidth) then
+circleEnemy:setLinearVelocity(-1000, 0)
+timer.performWithDelay((math.random(1, 5) * 1000), moveCirc)
+elseif (circleEnemy.y < 0) then
+circleEnemy:setLinearVelocity(0, 1000)
+timer.performWithDelay((math.random(1, 5) * 1000), moveCirc)
+elseif (circleEnemy.y > display.contentHeight) then
+circleEnemy:setLinearVelocity(0, -1000)
+timer.performWithDelay((math.random(1, 5) * 1000), moveCirc)
+end
+timer.performWithDelay(200, checkCirc)
+end
+checkCirc()
+
+-- Testing
+print(display.contentWidth .. "  " .. display.contentHeight)
