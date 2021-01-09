@@ -9,13 +9,15 @@ local widget = require("widget")
 local physics = require("physics")
 local math = require("math")
 local timer = require("timer")
+local Prototype = require( "CoronaPrototype" )
 
 -- Initialization
 math.randomseed(os.time())
 physics.start()
 physics.setGravity(0, 0)
 
--- Display groups etc.
+-- Variables, groups etc.
+ballNum, nesw, ballTable = 1, 0, {} -- Trying out some multiple assignment!
 local displayGroup1 = display.newGroup()
 
 -- Music and audio
@@ -182,47 +184,75 @@ sprite:addEventListener("touch", clockDirecChange)
 
 -- Let's get the circle moving around
 local function moveCirc ()
-local a = math.random(1, 4)
-if (a == 1) then
-print("To the north!")
-circleEnemy:setLinearVelocity(0, -1000)
-elseif (a == 2) then
-print("To the east!")
-circleEnemy:setLinearVelocity(1000, 0)
-elseif (a == 3) then
-print("To the south!")
-circleEnemy:setLinearVelocity(0, 1000)
-elseif (a == 4) then
-print("To the west!")
-circleEnemy:setLinearVelocity(-1000, 0)
-end
-timer.performWithDelay((math.random(1, 5) * 1000), moveCirc)
+  local a = math.random(1, 4)
+  if (a == 1) then
+    nesw = 1 -- To the north!
+    circleHead:setLinearVelocity(0, -100)
+  elseif (a == 2) then
+    print("To the east!")
+    nesw = 2
+    circleHead:setLinearVelocity(100, 0)
+  elseif (a == 3) then
+    print("To the south!")
+    nesw = 3
+    circleHead:setLinearVelocity(0, 100)
+  elseif (a == 4) then
+    print("To the west!")
+    nesw = 4
+    circleHead:setLinearVelocity(-100, 0)
+  end
+  timer.performWithDelay((math.random(1, 5) * 1000), moveCirc)
 end
 timer.performWithDelay((math.random(1, 5) * 1000), moveCirc)
 
 -- Let's create a circle
-circleEnemy = display.newCircle(800, 100, 50)
-circleEnemy:setFillColor(1, 0, 0)
-physics.addBody(circleEnemy, "dynamic")
+circleHead = display.newCircle(800, 100, 50)
+circleHead:setFillColor(1, 0, 0)
+physics.addBody(circleHead, "kinematic")
 
 -- Guide circle back onto the screen
 local function checkCirc ()
-if (circleEnemy.x < 0) then
-circleEnemy:setLinearVelocity(1000, 0)
-timer.performWithDelay((math.random(1, 5) * 1000), moveCirc)
-elseif (circleEnemy.x > display.contentWidth) then
-circleEnemy:setLinearVelocity(-1000, 0)
-timer.performWithDelay((math.random(1, 5) * 1000), moveCirc)
-elseif (circleEnemy.y < 0) then
-circleEnemy:setLinearVelocity(0, 1000)
-timer.performWithDelay((math.random(1, 5) * 1000), moveCirc)
-elseif (circleEnemy.y > display.contentHeight) then
-circleEnemy:setLinearVelocity(0, -1000)
-timer.performWithDelay((math.random(1, 5) * 1000), moveCirc)
-end
-timer.performWithDelay(200, checkCirc)
+  if (circleHead.x < 0) then
+    circleHead:setLinearVelocity(100, 0)
+  elseif (circleHead.x > display.contentWidth) then
+    circleHead:setLinearVelocity(-100, 0)
+  elseif (circleHead.y < 0) then
+    circleHead:setLinearVelocity(0, 100)
+  elseif (circleHead.y > display.contentHeight) then
+    circleHead:setLinearVelocity(0, -100)
+  end
+  timer.performWithDelay(200, checkCirc)
 end
 checkCirc()
 
--- Testing
-print(display.contentWidth .. "  " .. display.contentHeight)
+-- Ball constructor
+local ballClass = Prototype:newClass("ballClass")
+
+function ballClass:initialize()
+  ballNum = ballNum + 1
+  local thisBall = "ball" .. ballNum
+  thisBall = display.newCircle(0, 0, 50)
+  thisBall:setFillColor(0, 1, 0)
+  physics.addBody(thisBall, "kinematic")
+  table.insert(ballTable, thisBall)
+  if (nesw == 1) then
+    thisBall.x = circleHead.x
+    thisBall.y = circleHead.y + circleHead.height
+  elseif (nesw == 2) then
+    thisBall.x = circleHead.x - circleHead.width
+    thisBall.y = circleHead.y
+  elseif (nesw == 3) then
+    thisBall.x = circleHead.x
+    thisBall.y = circleHead.y - circleHead.height
+  elseif (nesw == 4) then
+    thisBall.x = circleHead.x + circleHead.width
+    thisBall.y = circleHead.y
+  end
+end
+
+-- Function to randomly spawn balls
+local function spawnBall ()
+  local ball = ballClass:new()
+  timer.performWithDelay(math.random(1, 10) * 1000, spawnBall)
+end
+timer.performWithDelay(10000, spawnBall)
