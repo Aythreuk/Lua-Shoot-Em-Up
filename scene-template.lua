@@ -1,62 +1,15 @@
------------------------------------------------------------------------------------------
---
--- main.lua
---
------------------------------------------------------------------------------------------
 
--- Load libraries
-local widget = require( "widget" )
 local composer = require( "composer" )
 
--- Other
 local scene = composer.newScene()
 
--- Function to style each button uniformly
-local function makeButton ( button, label, event, x, y )
-  local button = widget.newButton(
-      {
-          label = label,
-          onEvent = event,
-          emboss = false,
-          -- Properties for a rounded rectangle button
-          shape = "roundedRect",
-          width = 200,
-          height = 40,
-          cornerRadius = 2,
-          fillColor = { default={1,0,0,1}, over={1,0.1,0.7,0.4} },
-          strokeColor = { default={1,0.4,0,1}, over={0.8,0.8,1,1} },
-          strokeWidth = 4,
-          x = x,
-          y = y
-      }
-  )
-end
+-- -----------------------------------------------------------------------------------
+-- Code outside of the scene event functions below will only be executed ONCE unless
+-- the scene is removed entirely (not recycled) via "composer.removeScene()"
+-- -----------------------------------------------------------------------------------
 
--- Exit game function
-local function exitEvent( event )
-    if ( "ended" == event.phase ) then
-        native.requestExit()
-    end
-end
 
--- Settings function
-local function settingsEvent( event )
-    if ( "ended" == event.phase ) then
-        print("Let's change the settings!")
-    end
-end
 
--- New game function
-local function newGameEvent( event )
-    if ( "ended" == event.phase ) then
-        print("Let's start a new game!")
-    end
-end
-
--- Create buttons
-makeButton(exitButton, "Exit", exitEvent, display.contentCenterX, display.contentHeight - 100)
-makeButton(settingsButton, "Settings", settingsEvent, display.contentCenterX, display.contentHeight - 200)
-makeButton(newGameButton, "New Game", newGameEvent, display.contentCenterX, display.contentHeight - 300)
 
 -- -----------------------------------------------------------------------------------
 -- Scene event functions
