@@ -17,8 +17,6 @@ window=
 {
 defaultViewWidth = 1920,
 defaultViewHeight = 1080,
-minViewWidth= 1440,
-minViewHeight = 900,
 enableCloseButton = false,
 enableMaximizeButton = true,
 suspendWhenMinimized = true,
