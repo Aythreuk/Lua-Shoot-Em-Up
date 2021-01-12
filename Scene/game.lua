@@ -8,8 +8,10 @@ local scene = composer.newScene()
 -- the scene is removed entirely (not recycled) via "composer.removeScene()"
 -- -----------------------------------------------------------------------------------
 
+-- Declare variables
+local playerSpeed, wDown, playerMaxSpeed, speedIncrement = 0, false, 100, 1
 
-
+-- Image sheet frames
 local options =
 {
 	frames = {
@@ -56,6 +58,7 @@ local options =
 	}
 }
 
+-- Sequence data
 local playerSequence =
 {
 	{
@@ -79,19 +82,30 @@ local playerSequence =
 }
 local playerSheet = graphics.newImageSheet("shipSpriteSheet1.png", options)
 
--- Player hit the escape button
+-- increase speed function
+local function increaseSpeed ()
+	if (playerSpeed < playerMaxSpeed) then
+		playerSpeed = playerSpeed + speedIncrement
+	end
+end
+
+-- Keyboard events
 local function onKeyEvent ( event )
+-- Escape button (mostly for testing)
 if (event.phase == "down" and event.keyName == "escape") then
 	print("Escape function was called")
 	native.requestExit()
+end
+-- W button
+if (event.phase == "down" and event.keyName == "w") then
+	increaseSpeed()
+	print(playerSpeed)
 end
 	return false
 end
 
 -- Add the key event listener
 Runtime:addEventListener( "key", onKeyEvent )
-
-
 
 -- -----------------------------------------------------------------------------------
 -- Scene event functions
@@ -103,11 +117,17 @@ function scene:create( event )
 	local sceneGroup = self.view
 	-- Code here runs when the scene is first created but has not yet appeared on screen
 
+	-- Background
+	local background1 = display.newImage(sceneGroup, "Images/background1.png",
+display.contentCenterX, display.contentCenterY)
+	local bgConnector = display.newImage(sceneGroup, "Images/background1.png",
+display.contentCenterX, background1.y - background1.height)
+
+	-- Sprites
 	local playerSprite = display.newSprite(sceneGroup, playerSheet, playerSequence)
 	playerSprite.x = display.contentCenterX
 	playerSprite.y = display.contentHeight - 400
 	playerSprite:setFrame(1)
-print(playerSprite.frame)
 end
 
 
