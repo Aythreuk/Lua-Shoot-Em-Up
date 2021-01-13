@@ -1,6 +1,4 @@
-
 local composer = require( "composer" )
-
 local scene = composer.newScene()
 
 -- -----------------------------------------------------------------------------------
@@ -8,8 +6,15 @@ local scene = composer.newScene()
 -- the scene is removed entirely (not recycled) via "composer.removeScene()"
 -- -----------------------------------------------------------------------------------
 
+-- Load additional libraries
+local physics = require("physics")
+
+-- Initialization
+physics.start()
+
 -- Declare variables
-local playerSpeed, wDown, playerMaxSpeed, speedIncrement = 0, false, 100, 1
+local playerSpeed, playerMaxSpeed, speedIncrement, playerMinSpeed = 0, 100, 5, 0 -- Speed variables
+local wDown, sDown, aDown, dDown -- Keyboard variables
 
 -- Image sheet frames
 local options =
@@ -82,11 +87,39 @@ local playerSequence =
 }
 local playerSheet = graphics.newImageSheet("shipSpriteSheet1.png", options)
 
--- increase speed function
+-- adjust global speeds
+local function speedUpdate ()
+	bg1:setLinearVelocity( 0, playerSpeed * 10)
+	bg2:setLinearVelocity( 0, playerSpeed * 10)
+	--print(bg1, bg2, playerSpeed)
+end
+
+-- increase player speed function
 local function increaseSpeed ()
-	if (playerSpeed < playerMaxSpeed) then
+	if (wDown == true and playerSpeed < playerMaxSpeed) then
 		playerSpeed = playerSpeed + speedIncrement
+		speedUpdate()
+		timer.performWithDelay(100, increaseSpeed)
+		print(tostring(playerSpeed))
 	end
+end
+
+-- decrease player speed function
+local function decreaseSpeed ()
+	if (sDown == true and playerSpeed > playerMinSpeed) then
+		playerSpeed = playerSpeed - speedIncrement
+		speedUpdate()
+		timer.performWithDelay(100, decreaseSpeed)
+		print(tostring(playerSpeed))
+	end
+end
+
+local function turnRight () -- Turn right function
+
+end
+
+local function turnLeft () -- Turn left function
+
 end
 
 -- Keyboard events
@@ -98,14 +131,53 @@ if (event.phase == "down" and event.keyName == "escape") then
 end
 -- W button
 if (event.phase == "down" and event.keyName == "w") then
-	increaseSpeed()
-	print(playerSpeed)
+	wDown = true
+	timer.performWithDelay(100, increaseSpeed)
+end
+if (event.phase == "up" and event.keyName == "w") then
+	wDown = false
+end
+-- S button
+if (event.phase == "down" and event.keyName == "s") then
+	sDown = true
+	timer.performWithDelay(100, decreaseSpeed)
+end
+if (event.phase == "up" and event.keyName == "s") then
+	sDown = false
+end
+-- A button
+if (event.phase == "down" and event.keyName == "a") then
+	aDown = true
+	turnLeft()
+end
+if (event.phase == "up" and event.keyName == "a") then
+	aDown = false
+end
+-- D button
+if (event.phase == "down" and event.keyName == "d") then
+	dDown = true
+	turnRight()
+end
+if (event.phase == "up" and event.keyName == "d") then
+	dDown = false
 end
 	return false
 end
 
--- Add the key event listener
+local function frameListener( event ) -- Function that is called every frame
+    if ((bg1.y * 0.5) > display.contentHeight) then
+			bg1.y = bg2.y - bg1.height
+			print(bg1.y)
+		end
+		if ((bg2.y * 0.5) > display.contentHeight) then
+			bg2.y = bg1.y - bg2.height
+			print(bg2.y)
+		end
+end
+
+-- Listeners
 Runtime:addEventListener( "key", onKeyEvent )
+Runtime:addEventListener( "enterFrame", frameListener )
 
 -- -----------------------------------------------------------------------------------
 -- Scene event functions
@@ -118,10 +190,12 @@ function scene:create( event )
 	-- Code here runs when the scene is first created but has not yet appeared on screen
 
 	-- Background
-	local background1 = display.newImage(sceneGroup, "Images/background1.png",
+	  bg1 = display.newImage(sceneGroup, "Images/background1.png",
 display.contentCenterX, display.contentCenterY)
-	local bgConnector = display.newImage(sceneGroup, "Images/background1.png",
-display.contentCenterX, background1.y - background1.height)
+	  bg2 = display.newImage(sceneGroup, "Images/background1.png",
+display.contentCenterX, bg1.y - bg1.height)
+	physics.addBody(bg1, "kinematic")
+	physics.addBody(bg2, "kinematic")
 
 	-- Sprites
 	local playerSprite = display.newSprite(sceneGroup, playerSheet, playerSequence)
