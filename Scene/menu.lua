@@ -22,7 +22,6 @@ end
 -- Settings function
 local function settingsEvent( event )
     if ( "ended" == event.phase ) then
-        print("Let's change the settings!")
         composer.gotoScene("scene.settings")
     end
 end
@@ -30,7 +29,6 @@ end
 -- New game function
 local function newGameEvent( event )
     if ( "ended" == event.phase ) then
-        print("Let's start a new game!")
         composer.gotoScene("scene.game")
     end
 end

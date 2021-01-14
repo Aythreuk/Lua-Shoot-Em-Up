@@ -74,15 +74,28 @@ local playerSequence =
 	},
 {
 		name="leftTurn",
-	 frames= { 2, 4 }, -- frame indexes of animation, in image sheet
+	 frames= { 2, 3 }, -- frame indexes of animation, in image sheet
 	 time = 240,
-	 loopCount = 0
+	 loopCount = 1,
+		loopDirection = "forward"
 },
 {
 		name="rightTurn",
-	 frames= { 3, 5 }, -- frame indexes of animation, in image sheet
+	 frames= { 4, 5 }, -- frame indexes of animation, in image sheet
 	 time = 240,
-	 loopCount = 0
+	 loopCount = 1
+},
+{
+		name="leftReturn",
+	 frames= { 3, 2, 1 }, -- frame indexes of animation, in image sheet
+	 time = 240,
+	 loopCount = 1
+},
+{
+		name="rightReturn",
+	 frames= { 5, 4, 1 }, -- frame indexes of animation, in image sheet
+	 time = 240,
+	 loopCount = 1
 }
 }
 local playerSheet = graphics.newImageSheet("shipSpriteSheet1.png", options)
@@ -147,29 +160,37 @@ if (event.phase == "up" and event.keyName == "s") then
 end
 -- A button
 if (event.phase == "down" and event.keyName == "a") then
+	playerSprite:setSequence("leftTurn")
+	playerSprite:play()
 	aDown = true
 	turnLeft()
 end
 if (event.phase == "up" and event.keyName == "a") then
 	aDown = false
+	playerSprite:setSequence("leftReturn")
+	playerSprite:play()
 end
 -- D button
 if (event.phase == "down" and event.keyName == "d") then
+	playerSprite:setSequence("rightTurn")
+	playerSprite:play()
 	dDown = true
 	turnRight()
 end
 if (event.phase == "up" and event.keyName == "d") then
+	playerSprite:setSequence("rightReturn")
+	playerSprite:play()
 	dDown = false
 end
 	return false
 end
 
 local function frameListener( event ) -- Function that is called every frame
-    if ((bg1.y * 0.5) > display.contentHeight) then
+    if ((bg1.y - bg1.height * 0.5) > (display.contentHeight)) then
 			bg1.y = bg2.y - bg1.height
 			print(bg1.y)
 		end
-		if ((bg2.y * 0.5) > display.contentHeight) then
+		if ((bg2.y - bg2.height * 0.5) > display.contentHeight) then
 			bg2.y = bg1.y - bg2.height
 			print(bg2.y)
 		end
@@ -194,14 +215,16 @@ function scene:create( event )
 display.contentCenterX, display.contentCenterY)
 	  bg2 = display.newImage(sceneGroup, "Images/background1.png",
 display.contentCenterX, bg1.y - bg1.height)
+	bg1.width = display.contentWidth
+	bg2.width = display.contentWidth
 	physics.addBody(bg1, "kinematic")
 	physics.addBody(bg2, "kinematic")
 
 	-- Sprites
-	local playerSprite = display.newSprite(sceneGroup, playerSheet, playerSequence)
+	playerSprite = display.newSprite(sceneGroup, playerSheet, playerSequence)
 	playerSprite.x = display.contentCenterX
 	playerSprite.y = display.contentHeight - 400
-	playerSprite:setFrame(1)
+	playerSprite:setFrame(5)
 end
 
 
