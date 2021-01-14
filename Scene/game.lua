@@ -15,7 +15,7 @@ physics.setGravity( 0, 0 )
 
 -- Declare variables
 local playerSpeed, playerMaxSpeed, speedIncrement, playerMinSpeed, playerXSpeed = 0, 100, 5, 0, 0 -- Speed variables
-local playerMaxXSpeed, speedXIncrement, playerMinSpeed = 25, 1, -25 -- More speed variables
+local playerMaxXSpeed, playerMinXSpeed, speedXIncrement, playerXIncrement, playerMinSpeed = 25, -25, 1, 1, 0 -- More speed variables
 local wDown, sDown, aDown, dDown -- Keyboard variables
 
 -- Image sheet frames
@@ -69,37 +69,38 @@ local options =
 local playerSequence =
 {
 	{
-			name="idle",
-		 frames= { 1 }, -- frame indexes of animation, in image sheet
-		 time = 240,
-		 loopCount = 0
+		name="idle",
+		frames= { 1 }, -- frame indexes of animation, in image sheet
+		time = 240,
+		loopCount = 0
 	},
-{
+	{
 		name="leftTurn",
-	 frames= { 2, 3 }, -- frame indexes of animation, in image sheet
-	 time = 240,
-	 loopCount = 1,
+		frames= { 2, 3 }, -- frame indexes of animation, in image sheet
+		time = 240,
+		loopCount = 1,
 		loopDirection = "forward"
-},
-{
+	},
+	{
 		name="rightTurn",
-	 frames= { 4, 5 }, -- frame indexes of animation, in image sheet
-	 time = 240,
-	 loopCount = 1
-},
-{
+		frames= { 4, 5 }, -- frame indexes of animation, in image sheet
+		time = 240,
+		loopCount = 1
+	},
+	{
 		name="leftReturn",
-	 frames= { 3, 2, 1 }, -- frame indexes of animation, in image sheet
-	 time = 240,
-	 loopCount = 1
-},
-{
+		frames= { 3, 2, 1 }, -- frame indexes of animation, in image sheet
+		time = 240,
+		loopCount = 1
+	},
+	{
 		name="rightReturn",
-	 frames= { 5, 4, 1 }, -- frame indexes of animation, in image sheet
-	 time = 240,
-	 loopCount = 1
+		frames= { 5, 4, 1 }, -- frame indexes of animation, in image sheet
+		time = 240,
+		loopCount = 1
+	}
 }
-}
+
 local playerSheet = graphics.newImageSheet("shipSpriteSheet1.png", options)
 
 -- adjust global speeds
@@ -110,20 +111,23 @@ end
 
 -- WASD function
 local function wasdFunc ()
-	if (wDown == true and playerSpeed < playerMaxSpeed) then
+
+		
+
+	if (wDown and playerSpeed < playerMaxSpeed) then
 		playerSpeed = playerSpeed + speedIncrement
 		print(tostring(playerSpeed))
 	end
-	if (sDown == true and playerSpeed > playerMinSpeed) then
+	if (sDown and playerSpeed > playerMinSpeed) then
 		playerSpeed = playerSpeed - speedIncrement
 		print(tostring(playerSpeed))
 	end
-	if (aDown == true and playerXSpeed > playerMinXSpeed) then
+	if (aDown and playerXSpeed > playerMinXSpeed) then
 		playerXSpeed = playerXSpeed - playerXIncrement
 		playerSprite:setLinearVelocity(playerXSpeed, playerSpeed)
 		print(tostring(playerXSpeed))
 	end
-	if (dDown == true and playerXSpeed < playerMaxXSpeed) then
+	if (dDown and playerXSpeed < playerMaxXSpeed) then
 		playerXSpeed = playerXSpeed + playerXIncrement
 		playerSprite:setLinearVelocity(playerXSpeed, playerSpeed)
 		print(tostring(playerXSpeed))
