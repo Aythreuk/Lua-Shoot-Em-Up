@@ -11,9 +11,11 @@ local physics = require("physics")
 
 -- Initialization
 physics.start()
+physics.setGravity( 0, 0 )
 
 -- Declare variables
-local playerSpeed, playerMaxSpeed, speedIncrement, playerMinSpeed = 0, 100, 5, 0 -- Speed variables
+local playerSpeed, playerMaxSpeed, speedIncrement, playerMinSpeed, playerXSpeed = 0, 100, 5, 0, 0 -- Speed variables
+local playerMaxXSpeed, speedXIncrement, playerMinSpeed = 25, 1, -25 -- More speed variables
 local wDown, sDown, aDown, dDown -- Keyboard variables
 
 -- Image sheet frames
@@ -102,37 +104,31 @@ local playerSheet = graphics.newImageSheet("shipSpriteSheet1.png", options)
 
 -- adjust global speeds
 local function speedUpdate ()
-	bg1:setLinearVelocity( 0, playerSpeed * 10)
-	bg2:setLinearVelocity( 0, playerSpeed * 10)
-	--print(bg1, bg2, playerSpeed)
+	bg1:translate( 0, playerSpeed / 5)
+	bg2:translate( 0, playerSpeed / 5)
 end
 
--- increase player speed function
-local function increaseSpeed ()
+-- WASD function
+local function wasdFunc ()
 	if (wDown == true and playerSpeed < playerMaxSpeed) then
 		playerSpeed = playerSpeed + speedIncrement
-		speedUpdate()
-		timer.performWithDelay(100, increaseSpeed)
 		print(tostring(playerSpeed))
 	end
-end
-
--- decrease player speed function
-local function decreaseSpeed ()
 	if (sDown == true and playerSpeed > playerMinSpeed) then
 		playerSpeed = playerSpeed - speedIncrement
-		speedUpdate()
-		timer.performWithDelay(100, decreaseSpeed)
 		print(tostring(playerSpeed))
 	end
-end
-
-local function turnRight () -- Turn right function
-
-end
-
-local function turnLeft () -- Turn left function
-
+	if (aDown == true and playerXSpeed > playerMinXSpeed) then
+		playerXSpeed = playerXSpeed - playerXIncrement
+		playerSprite:setLinearVelocity(playerXSpeed, playerSpeed)
+		print(tostring(playerXSpeed))
+	end
+	if (dDown == true and playerXSpeed < playerMaxXSpeed) then
+		playerXSpeed = playerXSpeed + playerXIncrement
+		playerSprite:setLinearVelocity(playerXSpeed, playerSpeed)
+		print(tostring(playerXSpeed))
+	end
+	playerSprite:setLinearVelocity(playerXSpeed, 0)
 end
 
 -- Keyboard events
@@ -145,7 +141,6 @@ end
 -- W button
 if (event.phase == "down" and event.keyName == "w") then
 	wDown = true
-	timer.performWithDelay(100, increaseSpeed)
 end
 if (event.phase == "up" and event.keyName == "w") then
 	wDown = false
@@ -153,39 +148,30 @@ end
 -- S button
 if (event.phase == "down" and event.keyName == "s") then
 	sDown = true
-	timer.performWithDelay(100, decreaseSpeed)
 end
 if (event.phase == "up" and event.keyName == "s") then
 	sDown = false
 end
 -- A button
 if (event.phase == "down" and event.keyName == "a") then
-	playerSprite:setSequence("leftTurn")
-	playerSprite:play()
 	aDown = true
-	turnLeft()
 end
 if (event.phase == "up" and event.keyName == "a") then
 	aDown = false
-	playerSprite:setSequence("leftReturn")
-	playerSprite:play()
 end
 -- D button
 if (event.phase == "down" and event.keyName == "d") then
-	playerSprite:setSequence("rightTurn")
-	playerSprite:play()
 	dDown = true
-	turnRight()
 end
 if (event.phase == "up" and event.keyName == "d") then
-	playerSprite:setSequence("rightReturn")
-	playerSprite:play()
 	dDown = false
 end
 	return false
 end
 
 local function frameListener( event ) -- Function that is called every frame
+		speedUpdate()
+		wasdFunc()
     if ((bg1.y - bg1.height * 0.5) > (display.contentHeight)) then
 			bg1.y = bg2.y - bg1.height
 			print(bg1.y)
@@ -217,14 +203,13 @@ display.contentCenterX, display.contentCenterY)
 display.contentCenterX, bg1.y - bg1.height)
 	bg1.width = display.contentWidth
 	bg2.width = display.contentWidth
-	physics.addBody(bg1, "kinematic")
-	physics.addBody(bg2, "kinematic")
 
 	-- Sprites
 	playerSprite = display.newSprite(sceneGroup, playerSheet, playerSequence)
 	playerSprite.x = display.contentCenterX
 	playerSprite.y = display.contentHeight - 400
 	playerSprite:setFrame(5)
+	physics.addBody(playerSprite, "dynamic")
 end
 
 
