@@ -22,14 +22,14 @@ end
 -- Settings function
 local function settingsEvent( event )
     if ( "ended" == event.phase ) then
-        composer.gotoScene("scene.settings")
+        composer.gotoScene("Scene.settings")
     end
 end
 
 -- New game function
 local function newGameEvent( event )
     if ( "ended" == event.phase ) then
-        composer.gotoScene("scene.game")
+        composer.gotoScene("Scene.game")
     end
 end
 

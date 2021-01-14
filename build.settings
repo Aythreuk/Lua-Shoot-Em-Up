@@ -5,73 +5,74 @@
 
 settings =
 {
---
--- Desktop section
---
-win32=
-{
-preferenceStorage = "sqlite",
-singleInstance = true,
-},
-window=
-{
-defaultViewWidth = 1920,
-defaultViewHeight = 1080,
-enableCloseButton = false,
-enableMaximizeButton = true,
-suspendWhenMinimized = true,
-titleText  = {
-default = "SolarTest",
-["jp"] = "ソーラーテスト"
-}
-},
-orientation =
-{
--- Supported values for orientation:
--- portrait, portraitUpsideDown, landscapeLeft, landscapeRight
-default = "portrait",
-supported = { "portrait", },
-},
+    --
+    -- Desktop section
+    --
+    win32=
+    {
+        preferenceStorage = "sqlite",
+        singleInstance = true,
+    },
+    window=
+    {
+        defaultViewWidth = 1920,
+        defaultViewHeight = 1080,
+        enableCloseButton = false,
+        enableMaximizeButton = true,
+        suspendWhenMinimized = true,
+        titleText  = 
+            {
+            default = "SolarTest",
+            ["jp"] = "ソーラーテスト"
+            }
+    },
+    orientation =
+    {
+        -- Supported values for orientation:
+        -- portrait, portraitUpsideDown, landscapeLeft, landscapeRight
+        default = "portrait",
+        supported = { "portrait", },
+    },
 
---
--- Android section
---
-android =
-{
-usesPermissions =
-{
-"android.permission.INTERNET",
-},
-},
+    --
+    -- Android section
+    --
+    android =
+    {
+        usesPermissions =
+            {
+            "android.permission.INTERNET",
+            },
+    },
 
---
--- iOS section
---
-iphone =
-{
-xcassets = "Images.xcassets",
-plist =
-{
-UIStatusBarHidden = true,
-UILaunchStoryboardName = "LaunchScreen",
-},
-},
+    --
+    -- iOS section
+    --
+    iphone =
+        {
+        xcassets = "Images.xcassets",
+        plist =
+            {
+            UIStatusBarHidden = true,
+            UILaunchStoryboardName = "LaunchScreen",
+            },
+    },
 
---
--- Plugins section
---
-plugins =
-{
+    --
+    -- Plugins section
+    --
+    plugins =
+    {
 
-},
+    },
 
---
--- Project section
---
-excludeFiles =
-{
--- Exclude unnecessary files for each platform
-all = { "Icon.png", "Icon-*dpi.png", "Images.xcassets", },
-android = { "LaunchScreen.storyboardc", },
-},
+    --
+    -- Project section
+    --
+    excludeFiles =
+    {
+    -- Exclude unnecessary files for each platform
+        all = { "Icon.png", "Icon-*dpi.png", "Images.xcassets", },
+        android = { "LaunchScreen.storyboardc", },
+    },
 }
