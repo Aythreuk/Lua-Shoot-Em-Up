@@ -15,7 +15,7 @@ physics.setGravity( 0, 0 )
 
 -- Declare variables
 local playerSpeed, playerMaxSpeed, speedIncrement, playerMinSpeed, playerXSpeed = 0, 100, 5, 0, 0 -- Speed variables
-local playerMaxXSpeed, playerMinXSpeed, speedXIncrement, playerXIncrement, playerMinSpeed = 25, -25, 1, 1, 0 -- More speed variables
+local playerMaxXSpeed, playerMinXSpeed, playerXIncrement, playerMinSpeed = 400, -400, 20, 0 -- More speed variables
 local wDown, sDown, aDown, dDown -- Keyboard variables
 
 -- Image sheet frames
@@ -77,28 +77,31 @@ local playerSequence =
 	{
 		name="leftTurn",
 		frames= { 2, 3 }, -- frame indexes of animation, in image sheet
-		time = 240,
-		loopCount = 1,
-		loopDirection = "forward"
+		time = 1000,
+		loopCount = 1
 	},
 	{
 		name="rightTurn",
 		frames= { 4, 5 }, -- frame indexes of animation, in image sheet
-		time = 240,
+		time = 1000,
 		loopCount = 1
 	},
 	{
 		name="leftReturn",
-		frames= { 3, 2, 1 }, -- frame indexes of animation, in image sheet
-		time = 240,
+		frames= { 3, 2, 1,  }, -- frame indexes of animation, in image sheet
+		time = 1000,
 		loopCount = 1
 	},
 	{
 		name="rightReturn",
 		frames= { 5, 4, 1 }, -- frame indexes of animation, in image sheet
-		time = 240,
+		time = 1000,
 		loopCount = 1
-	}
+	},
+	{
+		name="aniRange",
+		frames = {1, 2, 3 ,4 ,5}
+}
 }
 
 local playerSheet = graphics.newImageSheet("shipSpriteSheet1.png", options)
@@ -109,30 +112,52 @@ local function speedUpdate ()
 	bg2:translate( 0, playerSpeed / 5)
 end
 
+local function fireMain() 																		-- Fire main weapons
+    local newLaser = display.newImageRect( "Images/bullet1.png", 11, 31 )
+    physics.addBody( newLaser, "dynamic", { isSensor=true } )
+    newLaser.isBullet = true
+    newLaser.myName = "laser"
+		newLaser.x = playerSprite.x
+    newLaser.y = playerSprite.y
+end
+
 -- WASD function
 local function wasdFunc ()
-
-		
-
-	if (wDown and playerSpeed < playerMaxSpeed) then
-		playerSpeed = playerSpeed + speedIncrement
-		print(tostring(playerSpeed))
-	end
-	if (sDown and playerSpeed > playerMinSpeed) then
-		playerSpeed = playerSpeed - speedIncrement
-		print(tostring(playerSpeed))
-	end
-	if (aDown and playerXSpeed > playerMinXSpeed) then
-		playerXSpeed = playerXSpeed - playerXIncrement
-		playerSprite:setLinearVelocity(playerXSpeed, playerSpeed)
-		print(tostring(playerXSpeed))
-	end
-	if (dDown and playerXSpeed < playerMaxXSpeed) then
+-- zero out x speed
+	if (playerXSpeed < 0 and not aDown and not dDown) then
 		playerXSpeed = playerXSpeed + playerXIncrement
-		playerSprite:setLinearVelocity(playerXSpeed, playerSpeed)
-		print(tostring(playerXSpeed))
+		playerSprite:setLinearVelocity(playerXSpeed, 0)
+	elseif (playerXSpeed > 0 and not aDown and not dDown) then
+		playerXSpeed = playerXSpeed - playerXIncrement
+		playerSprite:setLinearVelocity(playerXSpeed, 0)
+	end
+-- wasd keys
+	if (wDown and playerSpeed < playerMaxSpeed) then 							-- W key down
+		playerSpeed = playerSpeed + speedIncrement
+	end
+	if (sDown and playerSpeed > playerMinSpeed) then 							-- S key down
+		playerSpeed = playerSpeed - speedIncrement
+	end
+	if (aDown and playerXSpeed > playerMinXSpeed) then						-- A key down
+		playerXSpeed = playerXSpeed - playerXIncrement
+	end
+	if (dDown and playerXSpeed < playerMaxXSpeed) then						-- D key down
+		playerXSpeed = playerXSpeed + playerXIncrement
+	end
+-- play animations
+	if (playerXSpeed == 0) then
+		playerSprite:setFrame(1)
+	elseif (playerXSpeed < 0 and playerXSpeed > (playerMinXSpeed / 2)) then
+		playerSprite:setFrame(2)
+	elseif (playerXSpeed < (playerMinXSpeed / 2)) then
+		playerSprite:setFrame(3)
+	elseif (playerXSpeed > 0 and playerXSpeed < (playerMaxXSpeed / 2)) then
+		playerSprite:setFrame(4)
+	elseif (playerXSpeed > (playerMaxXSpeed / 2)) then
+		playerSprite:setFrame(5)
 	end
 	playerSprite:setLinearVelocity(playerXSpeed, 0)
+	print(playerXSpeed)
 end
 
 -- Keyboard events
@@ -169,6 +194,10 @@ if (event.phase == "down" and event.keyName == "d") then
 end
 if (event.phase == "up" and event.keyName == "d") then
 	dDown = false
+end
+-- K button
+if (event.phase == "down" and event.keyName == "k") then
+	fireMain()
 end
 	return false
 end
@@ -212,7 +241,8 @@ display.contentCenterX, bg1.y - bg1.height)
 	playerSprite = display.newSprite(sceneGroup, playerSheet, playerSequence)
 	playerSprite.x = display.contentCenterX
 	playerSprite.y = display.contentHeight - 400
-	playerSprite:setFrame(5)
+	playerSprite:setSequence("aniRange")
+	playerSprite:setFrame(1)
 	physics.addBody(playerSprite, "dynamic")
 end
 
