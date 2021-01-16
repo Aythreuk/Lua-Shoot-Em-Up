@@ -11,7 +11,9 @@ local bgGroup = display.newGroup()
 local mainGroup = display.newGroup()
 local uiGroup = display.newGroup()
 
--- Declare variables
+-------------------------------------------------------------- DECLARE VARIABLES
+
+-- Speed variables
 local playerSpeed =
 {
 	ySpeed = 0,
@@ -25,6 +27,15 @@ local playerSpeed =
 }
 
 local wDown, sDown, aDown, dDown -- Keyboard variables
+
+-- Life variables
+local playerLife =
+{
+playerMaxLife = 10,
+playerMinLife = 0,
+playerCurrentLife = 10
+}
+--------------------------------------------------------------- END OF VARIABLES
 
 -- Load additional libraries
 local physics = require("physics")
@@ -172,20 +183,39 @@ function scene:create( event )
 	bgGroup:insert(bg6)
 
 	-- health bar constructor
-	local function makeLifeBar (args)
-		local lifeBar = display.newRect ( sceneGroup, x, y, 50, 50)
-		lifebar:setFillColor( 0.8, 0.2, 0.4 )
+	local function makeLifeBar ( lifeBar, x )
+		print( lifeBar, x )
+		local lifeBar = display.newRect ( sceneGroup, x, display.contentHeight - 50, 50, 50)
+		uiGroup:insert(lifeBar)
+		lifeBar:toFront()
+		lifeBar:setFillColor( 0.8, 0.2, 0.4 )
+		lifeBar.name = "lifeBar" .. tostring(i)
+		lifeBar.x = x
+
 	end
 
 	--ammo bar constructor
 
 
 	-- Player UI
+	-- Back of the UI
 	local uiBack = display.newRect( uiGroup, display.contentCenterX,
 	display.contentHeight - 50, display.contentWidth, 100 )
 	uiBack:setFillColor( 0.3, 0.3, 0.3 )
 	uiBack.strokeWidth = 5
 	uiBack:setStrokeColor ( 0, 0, 0 )
+	-- Make the life bar
+	for i = 1, 10 do
+		local newName = "lifeBar" .. tostring(i)
+		local newX = i * 80
+		makeLifeBar( newName, newX )
+	end
+--[[
+	local bert = display.newRect ( sceneGroup, 100, 500, 50, 50)
+	bert:setFillColor( 1, 0, 0 )
+uiGroup:insert(bert)
+bert:toFront()
+print(bert)]]--
 
 	-- Sprites
 	local playerSprite = display.newSprite(sceneGroup, playerSheet, playerSequence)
@@ -301,7 +331,6 @@ function scene:create( event )
 			playerSpeed.ySpeed = 0
 		end
 		playerSprite:setLinearVelocity(playerSpeed.xSpeed, 0)
-		print(playerSpeed.ySpeed)
 	end
 
 	-- Keyboard events
@@ -342,6 +371,7 @@ function scene:create( event )
 			-- K button
 			if (event.phase == "down" and event.keyName == "k") then
 				fireMain()
+				print(lifeBar4)
 			end
 			return false
 		end
