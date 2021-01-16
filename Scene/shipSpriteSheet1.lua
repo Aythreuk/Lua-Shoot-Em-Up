@@ -13,7 +13,7 @@ local SheetInfo = {}
 SheetInfo.sheet =
 {
     frames = {
-    
+
         {
             -- ship1
             x=1,
