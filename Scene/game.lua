@@ -12,8 +12,18 @@ local mainGroup = display.newGroup()
 local uiGroup = display.newGroup()
 
 -- Declare variables
-local playerSpeed, playerMaxSpeed, speedIncrement, playerMinSpeed, playerXSpeed = 0, 120, 2, 0, 0 -- Speed variables
-local playerMaxXSpeed, playerMinXSpeed, playerXIncrement, playerMinSpeed = 500, -500, 20, 0 -- More speed variables
+local playerSpeed = 
+{
+	ySpeed = 0,
+	yMax = 100,
+	yMin = 0,
+	yIncrement = 5,
+	xSpeed = 0,
+	xMax = 400,
+	xMin = -400,
+	xIncrement = 20
+}
+
 local wDown, sDown, aDown, dDown -- Keyboard variables
 
 -- Load additional libraries
@@ -172,55 +182,55 @@ function scene:create( event )
 
 	-- adjust global speeds
 	local function speedUpdate ()
-		bg1:translate( playerXSpeed / 5, playerSpeed / 5)
-		bg2:translate( playerXSpeed / 5, playerSpeed / 5)
-		bg1:translate( playerXSpeed / 5, playerSpeed / 5)
-		bg2:translate( playerXSpeed / 5, playerSpeed / 5)
+		bg1:translate( playerSpeed.xSpeed / 5, playerSpeed.ySpeed / 5)
+		bg2:translate( playerSpeed.xSpeed / 5, playerSpeed.ySpeed / 5)
+		bg1:translate( playerSpeed.xSpeed / 5, playerSpeed.ySpeed / 5)
+		bg2:translate( playerSpeed.xSpeed / 5, playerSpeed.ySpeed / 5)
 	end
 
 	-- WASD function
 	local function wasdFunc ()
 		-- auto slow down because it feels good
-		if (playerXSpeed < 0 and not aDown and not dDown) then
-			playerXSpeed = playerXSpeed + playerXIncrement / 2
-			playerSprite:setLinearVelocity(playerXSpeed, 0)
-		elseif (playerXSpeed > 0 and not aDown and not dDown) then
-			playerXSpeed = playerXSpeed - playerXIncrement / 2
-			playerSprite:setLinearVelocity(playerXSpeed, 0)
+		if (playerSpeed.xSpeed < 0 and not aDown and not dDown) then
+			playerSpeed.xSpeed = playerSpeed.xSpeed + playerSpeed.xIncrement / 2
+			playerSprite:setLinearVelocity(playerSpeed.xSpeed, 0)
+		elseif (playerSpeed.xSpeed > 0 and not aDown and not dDown) then
+			playerSpeed.xSpeed = playerSpeed.xSpeed - playerSpeed.xIncrement / 2
+			playerSprite:setLinearVelocity(playerSpeed.xSpeed, 0)
 		end
-		if (playerSpeed > 0 and not wDown and not sDown) then
-			playerSpeed = playerSpeed - speedIncrement / 4
+		if (playerSpeed.ySpeed > 0 and not wDown and not sDown) then
+			playerSpeed.ySpeed = playerSpeed.ySpeed - playerSpeed.yIncrement / 4
 		end
 		-- wasd keys
-		if (wDown and playerSpeed < playerMaxSpeed) then 							-- W key down
-			playerSpeed = playerSpeed + speedIncrement
+		if (wDown and playerSpeed.ySpeed < playerSpeed.yMax) then 							-- W key down
+			playerSpeed.ySpeed = playerSpeed.ySpeed + playerSpeed.yIncrement
 		end
-		if (sDown and playerSpeed > playerMinSpeed) then 							-- S key down
-			playerSpeed = playerSpeed - speedIncrement
+		if (sDown and playerSpeed.ySpeed > playerSpeed.yMin) then 							-- S key down
+			playerSpeed.ySpeed = playerSpeed.ySpeed - playerSpeed.yIncrement
 		end
-		if (aDown and playerXSpeed > playerMinXSpeed) then						-- A key down
-			playerXSpeed = playerXSpeed - playerXIncrement
+		if (aDown and playerSpeed.xSpeed > playerSpeed.xMin) then						-- A key down
+			playerSpeed.xSpeed = playerSpeed.xSpeed - playerSpeed.xIncrement
 		end
-		if (dDown and playerXSpeed < playerMaxXSpeed) then						-- D key down
-			playerXSpeed = playerXSpeed + playerXIncrement
+		if (dDown and playerSpeed.xSpeed < playerSpeed.xMax) then						-- D key down
+			playerSpeed.xSpeed = playerSpeed.xSpeed + playerSpeed.xIncrement
 		end
 		-- play animations
-		if (playerXSpeed == 0) then
+		if (playerSpeed.xSpeed == 0) then
 			playerSprite:setFrame(1)
-		elseif (playerXSpeed < 0 and playerXSpeed > (playerMinXSpeed / 2)) then
+		elseif (playerSpeed.xSpeed < 0 and playerSpeed.xSpeed > (playerSpeed.xMin / 2)) then
 			playerSprite:setFrame(2)
-		elseif (playerXSpeed < (playerMinXSpeed / 2)) then
+		elseif (playerSpeed.xSpeed < (playerSpeed.xMin / 2)) then
 			playerSprite:setFrame(3)
-		elseif (playerXSpeed > 0 and playerXSpeed < (playerMaxXSpeed / 2)) then
+		elseif (playerSpeed.xSpeed > 0 and playerSpeed.xSpeed < (playerSpeed.xMax / 2)) then
 			playerSprite:setFrame(4)
-		elseif (playerXSpeed > (playerMaxXSpeed / 2)) then
+		elseif (playerSpeed.xSpeed > (playerSpeed.xMax / 2)) then
 			playerSprite:setFrame(5)
 		end
-		if (playerSpeed < 0 ) then -- Preventing a bug where playerSpeed went below zero
-			playerSpeed = 0
+		if (playerSpeed.ySpeed < 0 ) then -- Preventing a bug where playerSpeed went below zero
+			playerSpeed.ySpeed = 0
 		end
-		playerSprite:setLinearVelocity(playerXSpeed, 0)
-		print(playerSpeed)
+		playerSprite:setLinearVelocity(playerSpeed.xSpeed, 0)
+		print(playerSpeed.ySpeed)
 	end
 
 	-- Keyboard events
