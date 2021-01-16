@@ -12,7 +12,7 @@ local mainGroup = display.newGroup()
 local uiGroup = display.newGroup()
 
 -- Declare variables
-local playerSpeed = 
+local playerSpeed =
 {
 	ySpeed = 0,
 	yMax = 100,
@@ -147,10 +147,14 @@ function scene:create( event )
 	bg2.width = display.contentWidth * 2
 	bg3.width = display.contentWidth * 2
 	bg4.width = display.contentWidth * 2
+	bg5.width = display.contentWidth * 2
+	bg6.width = display.contentWidth * 2
 	bg1.height = bg1.height * 2
 	bg2.height = bg2.height * 2
 	bg3.height = bg3.height * 2
 	bg4.height = bg4.height * 2
+	bg5.height = bg5.height * 2
+	bg6.height = bg6.height * 2
 	bgGroup:insert(bg1)
 	bgGroup:insert(bg2)
 	bgGroup:insert(bg3)
@@ -163,7 +167,7 @@ function scene:create( event )
 	end
 
 	--ammo bar constructor
-
+	
 
 	-- Player UI
 	local uiBack = display.newRect( uiGroup, display.contentCenterX,
@@ -199,6 +203,8 @@ function scene:create( event )
 		bg2:translate( -(playerSpeed.xSpeed / 10), playerSpeed.ySpeed / 5)
 		bg3:translate( -(playerSpeed.xSpeed / 10), playerSpeed.ySpeed / 5)
 		bg4:translate( -(playerSpeed.xSpeed / 10), playerSpeed.ySpeed / 5)
+		bg5:translate( -(playerSpeed.xSpeed / 10), playerSpeed.ySpeed / 5)
+		bg6:translate( -(playerSpeed.xSpeed / 10), playerSpeed.ySpeed / 5)
 		-- Backgrounds leave the screen +y
 		if ((bg1.y - bg1.height * 0.5) > (display.contentHeight)) then
 			bg1.y = bg2.y - bg1.height
