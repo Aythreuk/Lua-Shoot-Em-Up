@@ -121,13 +121,13 @@ function scene:create( event )
 	-- Code here runs when the scene is first created but has not yet appeared on screen
 
 	-- Background
-	local bg1 = display.newImage(sceneGroup, "Images/background1.png",
+	local bg1 = display.newImage( sceneGroup, "Images/background1.png",
 	display.contentCenterX, display.contentCenterY)
-	local bg2 = display.newImage(sceneGroup, "Images/background1.png",
+	local bg2 = display.newImage( sceneGroup, "Images/background1.png",
 	display.contentCenterX, bg1.y - bg1.height * 2)
-	local bg3 = display.newImage(sceneGroup, "Images/background1.png",
+	local bg3 = display.newImage( sceneGroup, "Images/background1.png",
 	bg1.x - bg1.width, display.contentCenterY)
-	local bg4 = display.newImage(sceneGroup, "Images/background1.png",
+	local bg4 = display.newImage( sceneGroup, "Images/background1.png",
 	bg2.x - bg2.width, display.contentCenterY)
 	bg1.width = display.contentWidth * 2
 	bg2.width = display.contentWidth * 2
@@ -141,6 +141,14 @@ function scene:create( event )
 	bgGroup:insert(bg2)
 	bgGroup:insert(bg3)
 	bgGroup:insert(bg4)
+
+	-- health bar constructor
+	local function makeLifeBar (args)
+		local lifeBar = display.newRect ( sceneGroup, x, y, 50, 50)
+	end
+
+	--ammo bar constructor
+
 
 	-- Player UI
 	local uiBack = display.newRect( uiGroup, display.contentCenterX,
@@ -171,11 +179,52 @@ function scene:create( event )
 	end
 
 	-- adjust global speeds
-	local function speedUpdate ()
-		bg1:translate( playerXSpeed / 5, playerSpeed / 5)
-		bg2:translate( playerXSpeed / 5, playerSpeed / 5)
-		bg1:translate( playerXSpeed / 5, playerSpeed / 5)
-		bg2:translate( playerXSpeed / 5, playerSpeed / 5)
+	local function bgUpdate ()
+		bg1:translate( -(playerXSpeed / 10), playerSpeed / 5)
+		bg2:translate( -(playerXSpeed / 10), playerSpeed / 5)
+		bg3:translate( -(playerXSpeed / 10), playerSpeed / 5)
+		bg4:translate( -(playerXSpeed / 10), playerSpeed / 5)
+		-- Backgrounds leave the screen +y
+		if ((bg1.y - bg1.height * 0.5) > (display.contentHeight)) then
+			bg1.y = bg2.y - bg1.height
+		end
+		if ((bg2.y - bg2.height * 0.5) > display.contentHeight) then
+			bg2.y = bg1.y - bg2.height
+		end
+		if ((bg3.y - bg3.height * 0.5) > (display.contentHeight)) then
+			bg3.y = bg1.y - bg1.height
+		end
+		if ((bg4.y - bg4.height * 0.5) > display.contentHeight) then
+			bg4.y = bg2.y - bg2.height
+		end
+
+		-- backgrounds leave the screen +x
+		if ((bg1.x - bg1.width * 0.5) > (display.contentWidth)) then
+			bg1.x = bg3.x - bg1.width
+		end
+		if ((bg2.x - bg2.width * 0.5) > (display.contentWidth)) then
+			bg2.x = bg1.x - bg1.width
+		end
+		if ((bg1.x - bg1.width * 0.5) > (display.contentWidth)) then
+			bg1.x = bg3.x - bg1.width
+		end
+		if ((bg2.x - bg2.width * 0.5) > (display.contentWidth)) then
+			bg2.x = bg1.x - bg1.width
+		end
+
+		-- backgrounds leave the screen -x
+		if ((bg1.x - bg1.width * 0.5) < 0 ) then
+			bg1.x = bg3.x - bg1.width
+		end
+		if ((bg2.x - bg2.width * 0.5) < 0 ) then
+			bg2.x = bg1.x - bg1.width
+		end
+		if ((bg1.x - bg1.width * 0.5) < 0 ) then
+			bg1.x = bg3.x - bg1.width
+		end
+		if ((bg2.x - bg2.width * 0.5) < 0 ) then
+			bg2.x = bg1.x - bg1.width
+		end
 	end
 
 	-- WASD function
@@ -265,18 +314,12 @@ function scene:create( event )
 			return false
 		end
 
+
+
 		-- Update function called every frame
 		local function frameListener( event )
-			speedUpdate()
+			bgUpdate()
 			wasdFunc()
-			if ((bg1.y - bg1.height * 0.5) > (display.contentHeight)) then
-				bg1.y = bg2.y - bg1.height
-				print(bg1.y)
-			end
-			if ((bg2.y - bg2.height * 0.5) > display.contentHeight) then
-				bg2.y = bg1.y - bg2.height
-				print(bg2.y)
-			end
 		end
 
 		-- Listeners
