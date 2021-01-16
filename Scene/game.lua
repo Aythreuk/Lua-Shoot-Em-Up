@@ -128,6 +128,10 @@ function scene:create( event )
 	local bg3 = display.newImage( sceneGroup, "Images/background1.png",
 	bg1.x - bg1.width, display.contentCenterY)
 	local bg4 = display.newImage( sceneGroup, "Images/background1.png",
+	bg2.x + bg2.width, display.contentCenterY)
+	local bg5 = display.newImage( sceneGroup, "Images/background1.png",
+	bg2.x - bg2.width, display.contentCenterY)
+	local bg6 = display.newImage( sceneGroup, "Images/background1.png",
 	bg2.x - bg2.width, display.contentCenterY)
 	bg1.width = display.contentWidth * 2
 	bg2.width = display.contentWidth * 2
@@ -145,6 +149,7 @@ function scene:create( event )
 	-- health bar constructor
 	local function makeLifeBar (args)
 		local lifeBar = display.newRect ( sceneGroup, x, y, 50, 50)
+		lifebar:setFillColor( 0.8, 0.2, 0.4 )
 	end
 
 	--ammo bar constructor
