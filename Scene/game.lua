@@ -131,18 +131,15 @@ function scene:create( event )
 	-- Code here runs when the scene is first created but has not yet appeared on screen
 
 	-- Background
-	local bg1 = display.newImage( sceneGroup, "Images/background1.png",
-	display.contentCenterX, display.contentCenterY)
-	local bg2 = display.newImage( sceneGroup, "Images/background1.png",
-	display.contentCenterX, bg1.y - bg1.height * 2)
-	local bg3 = display.newImage( sceneGroup, "Images/background1.png",
-	bg1.x - bg1.width, display.contentCenterY)
-	local bg4 = display.newImage( sceneGroup, "Images/background1.png",
-	bg2.x + bg2.width, display.contentCenterY)
-	local bg5 = display.newImage( sceneGroup, "Images/background1.png",
-	bg2.x - bg2.width, display.contentCenterY)
-	local bg6 = display.newImage( sceneGroup, "Images/background1.png",
-	bg2.x - bg2.width, display.contentCenterY)
+	-- Background default lay out is as below (Player begins on bg1)
+	-- 6 2 4
+	-- 5 1 3
+	local bg1 = display.newImage( sceneGroup, "Images/background1.png" )
+	local bg2 = display.newImage( sceneGroup, "Images/background1.png" )
+	local bg3 = display.newImage( sceneGroup, "Images/background1.png" )
+	local bg4 = display.newImage( sceneGroup, "Images/background1.png" )
+	local bg5 = display.newImage( sceneGroup, "Images/background1.png" )
+	local bg6 = display.newImage( sceneGroup, "Images/background1.png" )
 	bg1.width = display.contentWidth * 2
 	bg2.width = display.contentWidth * 2
 	bg3.width = display.contentWidth * 2
@@ -155,10 +152,24 @@ function scene:create( event )
 	bg4.height = bg4.height * 2
 	bg5.height = bg5.height * 2
 	bg6.height = bg6.height * 2
+	bg1.x = display.contentCenterX
+	bg1.y = display.contentCenterY
+	bg2.x = display.contentCenterX
+	bg2.y = bg1.y - bg1.height
+	bg3.x = bg1.x + bg1.width
+	bg3.y = bg1.y
+	bg4.x = bg2.x + bg2.width
+	bg4.y = bg2.y
+	bg5.x = bg1.x - bg1.width
+	bg5.y = bg1.y
+	bg6.x = bg2.x - bg2.width
+	bg6.y = bg2.y
 	bgGroup:insert(bg1)
 	bgGroup:insert(bg2)
 	bgGroup:insert(bg3)
 	bgGroup:insert(bg4)
+	bgGroup:insert(bg5)
+	bgGroup:insert(bg6)
 
 	-- health bar constructor
 	local function makeLifeBar (args)
@@ -167,7 +178,7 @@ function scene:create( event )
 	end
 
 	--ammo bar constructor
-	
+
 
 	-- Player UI
 	local uiBack = display.newRect( uiGroup, display.contentCenterX,
@@ -205,47 +216,47 @@ function scene:create( event )
 		bg4:translate( -(playerSpeed.xSpeed / 10), playerSpeed.ySpeed / 5)
 		bg5:translate( -(playerSpeed.xSpeed / 10), playerSpeed.ySpeed / 5)
 		bg6:translate( -(playerSpeed.xSpeed / 10), playerSpeed.ySpeed / 5)
-		-- Backgrounds leave the screen +y
-		if ((bg1.y - bg1.height * 0.5) > (display.contentHeight)) then
-			bg1.y = bg2.y - bg1.height
+		-- Backgrounds leave the screen southbound (north bound not possible)
+		-- 6 2 4
+		-- 5 1 3
+		if (bg1.y > display.contentHeight * 1.5) then -- if bg1 leaves the screen on the
+			bg1.y = bg2.y - bg2.height						-- y axis, it moves up and takes it's
+			bg3.y = bg4.y - bg4.height						-- comrades with it
+			bg5.y = bg6.y - bg6.height
 		end
-		if ((bg2.y - bg2.height * 0.5) > display.contentHeight) then
-			bg2.y = bg1.y - bg2.height
-		end
-		if ((bg3.y - bg3.height * 0.5) > (display.contentHeight)) then
-			bg3.y = bg1.y - bg1.height
-		end
-		if ((bg4.y - bg4.height * 0.5) > display.contentHeight) then
-			bg4.y = bg2.y - bg2.height
-		end
-
-		-- backgrounds leave the screen +x
-		if ((bg1.x - bg1.width * 0.5) > (display.contentWidth)) then
-			bg1.x = bg3.x - bg1.width
-		end
-		if ((bg2.x - bg2.width * 0.5) > (display.contentWidth)) then
-			bg2.x = bg1.x - bg1.width
-		end
-		if ((bg1.x - bg1.width * 0.5) > (display.contentWidth)) then
-			bg1.x = bg3.x - bg1.width
-		end
-		if ((bg2.x - bg2.width * 0.5) > (display.contentWidth)) then
-			bg2.x = bg1.x - bg1.width
+		if (bg2.y > display.contentHeight * 1.5) then	-- same thing, next row
+			bg2.y = bg1.y - bg1.height
+			bg4.y = bg3.y - bg3.height
+			bg6.y = bg5.y - bg5.height
 		end
 
-		-- backgrounds leave the screen -x
-		if ((bg1.x - bg1.width * 0.5) < 0 ) then
-			bg1.x = bg3.x - bg1.width
+		-- yikes, this part is more complicated. Here we go boys.
+		if (bg1.x > display.contentWidth * 2) then
+			bg1.x = bg3.x - bg3.width
+			bg2.x = bg4.x - bg4.width
 		end
-		if ((bg2.x - bg2.width * 0.5) < 0 ) then
-			bg2.x = bg1.x - bg1.width
+		if (bg3.x > display.contentWidth * 2) then
+			bg3.x = bg5.x - bg5.width
+			bg4.x = bg6.x - bg6.width
 		end
-		if ((bg1.x - bg1.width * 0.5) < 0 ) then
-			bg1.x = bg3.x - bg1.width
+		if (bg5.x > display.contentWidth * 2) then
+			bg5.x = bg1.x - bg1.width
+			bg6.x = bg2.x - bg2.width
 		end
-		if ((bg2.x - bg2.width * 0.5) < 0 ) then
-			bg2.x = bg1.x - bg1.width
+
+		if (bg1.x < -(display.contentWidth)) then
+			bg1.x = bg3.x + bg3.width
+			bg2.x = bg4.x + bg4.width
 		end
+		if (bg3.x < -(display.contentWidth)) then
+			bg3.x = bg5.x + bg5.width
+			bg4.x = bg6.x + bg6.width
+		end
+		if (bg5.x < -(display.contentWidth)) then
+			bg5.x = bg1.x + bg1.width
+			bg6.x = bg2.x + bg2.width
+		end
+
 	end
 
 	-- WASD function
