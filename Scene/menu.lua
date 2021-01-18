@@ -4,30 +4,27 @@
 --
 -----------------------------------------------------------------------------------------
 
--- Load libraries
-local widget = require( "widget" )
+local widget = require( "widget" )                                              -- Load libraries
 local composer = require( "composer" )
 
--- Variables and references
-local scene = composer.newScene()
+local scene = composer.newScene()                                               -- Variables and references
 local group1 = display.newGroup()
 
--- Exit game function
-local function exitEvent( event )
+native.setProperty( "mouseCursorVisible", true )                                -- Initialization
+
+local function exitEvent( event )                                               -- Exit game function
   if ( "ended" == event.phase ) then
     native.requestExit()
   end
 end
 
--- Settings function
-local function settingsEvent( event )
+local function settingsEvent( event )                                           -- Settings function
   if ( "ended" == event.phase ) then
     composer.gotoScene("Scene.settings")
   end
 end
 
--- New game function
-local function newGameEvent( event )
+local function newGameEvent( event )                                            -- New game function
   if ( "ended" == event.phase ) then
     composer.gotoScene("Scene.game")
   end
@@ -43,8 +40,7 @@ function scene:create( event )
   local sceneGroup = self.view
   -- Code here runs when the scene is first created but has not yet appeared on screen
 
-  -- Function to style each button uniformly
-  local function makeButton ( button, label, event, x, y )
+  local function makeButton ( button, label, event, x, y )                        -- Button constructor function
     local button = widget.newButton(
     {
       label = label,
