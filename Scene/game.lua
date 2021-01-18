@@ -33,99 +33,19 @@ local playerStats =																															-- Player ammo, life, status, 
 	playerCurrentLife = 10,
 	playerMaxAmmo = 10,
 	playerMinAmmo = 0,
-	playerCurrentAmmo = 10
+	playerCurrentAmmo = 10,
+	playerFireRate
 }
 
 local physics = require("physics")																							-- Load additional libraries
+local spriteSheets = require("Images.spriteSheets")
 
 physics.start()																																	-- Initialization
 physics.setGravity( 0, 0 )
 native.setProperty( "mouseCursorVisible", false )
 
-local options =																																	-- Image sheet frames
-{
-	frames = {
-		{
-			-- ship1
-			x=1,
-			y=1,
-			width=94,
-			height=100,
-
-		},
-		{
-			-- ship2
-			x=97,
-			y=1,
-			width=86,
-			height=99,
-
-		},
-		{
-			-- ship3
-			x=273,
-			y=1,
-			width=76,
-			height=99,
-
-		},
-		{
-			-- ship4
-			x=185,
-			y=1,
-			width=86,
-			height=99,
-
-		},
-		{
-			-- ship5
-			x=351,
-			y=1,
-			width=76,
-			height=99,
-
-		},
-	}
-}
-
-local playerSequence =  																												-- Sequence data
-{
-	{
-		name="idle",
-		frames= { 1 }, -- frame indexes of animation, in image sheet
-		time = 240,
-		loopCount = 0
-	},
-	{
-		name="leftTurn",
-		frames= { 2, 3 }, -- frame indexes of animation, in image sheet
-		time = 1000,
-		loopCount = 1
-	},
-	{
-		name="rightTurn",
-		frames= { 4, 5 }, -- frame indexes of animation, in image sheet
-		time = 1000,
-		loopCount = 1
-	},
-	{
-		name="leftReturn",
-		frames= { 3, 2, 1,  }, -- frame indexes of animation, in image sheet
-		time = 1000,
-		loopCount = 1
-	},
-	{
-		name="rightReturn",
-		frames= { 5, 4, 1 }, -- frame indexes of animation, in image sheet
-		time = 1000,
-		loopCount = 1
-	},
-	{
-		name="aniRange",
-		frames = {1, 2, 3 ,4 ,5}
-	}
-}
-local playerSheet = graphics.newImageSheet("shipSpriteSheet1.png", options)
+local playerSheet = graphics.newImageSheet("Images/shipSpriteSheet1.png",
+spriteSheets.playerOptions)
 
 -- -----------------------------------------------------------------------------------
 -- Scene event functions
@@ -244,7 +164,8 @@ function scene:create( event ) 																									-- create()
 	end
 
 	-- Sprites
-	local playerSprite = display.newSprite(sceneGroup, playerSheet, playerSequence)
+	local playerSprite = display.newSprite( sceneGroup, playerSheet,
+ 	spriteSheets.playerSequence)
 	playerSprite.x = display.contentCenterX
 	playerSprite.y = display.contentHeight - 250
 	playerSprite:setSequence("aniRange")
