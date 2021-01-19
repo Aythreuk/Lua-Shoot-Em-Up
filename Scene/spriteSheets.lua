@@ -1,6 +1,6 @@
 local spriteSheets = {}
 
-local playerOptions =																										-- Frames for player sprite
+ spriteSheets.playerOptions =																										-- Frames for player sprite
 {
 	frames = {
 		{
@@ -46,7 +46,7 @@ local playerOptions =																										-- Frames for player sprite
 	}
 }
 
-local playerSequence =  																									-- Sequence data for player sprite
+spriteSheets.playerSequence =  																									-- Sequence data for player sprite
 {
 	{
 		name="idle",
@@ -84,7 +84,4 @@ local playerSequence =  																									-- Sequence data for player spr
 	}
 }
 
-return {
-playerOptions = playerOptions
-playerSequence = playerSequence
-}
+return spriteSheets

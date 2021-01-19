@@ -40,33 +40,33 @@ function scene:create( event )
   local sceneGroup = self.view
   -- Code here runs when the scene is first created but has not yet appeared on screen
 
-  local function makeButton ( button, label, event, x, y )                        -- Button constructor function
-    local button = widget.newButton(
-    {
-      label = label,
-      onEvent = event,
-      emboss = false,
-      -- Properties for a rounded rectangle button
-      shape = "roundedRect",
-      width = 200,
-      height = 40,
-      cornerRadius = 2,
-      fillColor = { default={1,0,0,1}, over={1,0.1,0.7,0.4} },
-      strokeColor = { default={1,0.4,0,1}, over={0.8,0.8,1,1} },
-      strokeWidth = 4,
-      x = x,
-      y = y
-    }
-  )
-  sceneGroup:insert(button)
+local function makeButton ( label, event, x, y )
+  local self = {}
+  self = widget.newButton(
+  {
+    label = label,
+    onEvent = event,
+    x = x,
+    y = y,
+    emboss = false,
+    shape = "roundedRect",
+    width = 200,
+    height = 40,
+    cornerRadius = 2,
+    fillColor = { default={1,0,0,1}, over={1,0.1,0.7,0.4} },
+    strokeColor = { default={1,0.4,0,1}, over={0.8,0.8,1,1} },
+    strokeWidth = 4
+  }
+)
+sceneGroup:insert( self )
 end
 
 -- Create buttons
-makeButton("exitButton", "Exit", exitEvent, display.contentCenterX,
+local exitButton = makeButton( "Exit", exitEvent, display.contentCenterX,
 display.contentHeight - 100)
-makeButton("settingsButton", "Settings", settingsEvent, display.contentCenterX,
+local settinsButton = makeButton( "Settings", settingsEvent, display.contentCenterX,
 display.contentHeight - 200)
-makeButton("newGameButton", "New Game", newGameEvent, display.contentCenterX,
+local newGameButton = makeButton( "New Game", newGameEvent, display.contentCenterX,
 display.contentHeight - 300)
 end
 
