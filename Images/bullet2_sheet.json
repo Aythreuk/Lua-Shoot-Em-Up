@@ -1,0 +1,60 @@
+{"frames": [
+
+{
+	"filename": "bullet2_1.png",
+	"frame": {"x":0,"y":0,"w":9,"h":29},
+	"rotated": false,
+	"trimmed": false,
+	"spriteSourceSize": {"x":0,"y":0,"w":9,"h":29},
+	"sourceSize": {"w":9,"h":29}
+},
+{
+	"filename": "bullet2_2.png",
+	"frame": {"x":9,"y":0,"w":9,"h":29},
+	"rotated": false,
+	"trimmed": false,
+	"spriteSourceSize": {"x":0,"y":0,"w":9,"h":29},
+	"sourceSize": {"w":9,"h":29}
+},
+{
+	"filename": "bullet2_3.png",
+	"frame": {"x":18,"y":0,"w":9,"h":29},
+	"rotated": false,
+	"trimmed": false,
+	"spriteSourceSize": {"x":0,"y":0,"w":9,"h":29},
+	"sourceSize": {"w":9,"h":29}
+},
+{
+	"filename": "bullet2_4.png",
+	"frame": {"x":27,"y":0,"w":9,"h":29},
+	"rotated": false,
+	"trimmed": false,
+	"spriteSourceSize": {"x":0,"y":0,"w":9,"h":29},
+	"sourceSize": {"w":9,"h":29}
+},
+{
+	"filename": "bullet2_5.png",
+	"frame": {"x":36,"y":0,"w":9,"h":29},
+	"rotated": false,
+	"trimmed": false,
+	"spriteSourceSize": {"x":0,"y":0,"w":9,"h":29},
+	"sourceSize": {"w":9,"h":29}
+},
+{
+	"filename": "bullet2_6.png",
+	"frame": {"x":45,"y":0,"w":9,"h":29},
+	"rotated": false,
+	"trimmed": false,
+	"spriteSourceSize": {"x":0,"y":0,"w":9,"h":29},
+	"sourceSize": {"w":9,"h":29}
+}],
+"meta": {
+	"app": "https://www.codeandweb.com/texturepacker",
+	"version": "1.0",
+	"image": "enemy1_sheet.png",
+	"format": "RGBA8888",
+	"size": {"w":54,"h":29},
+	"scale": "1",
+	"smartupdate": "$TexturePacker:SmartUpdate:f2bbdd245694d41b93da25a58e363357:d350cef4086008e9662684252e4ba153:2c8cabd058b82fac3eec161fa79b9bb8$"
+}
+}

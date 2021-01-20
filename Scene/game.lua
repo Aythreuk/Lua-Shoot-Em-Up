@@ -25,7 +25,8 @@ local playerSpeed =																															-- Speed variables
 local wDown, sDown, aDown, dDown, spaceDown, fireCd															-- Keyboard variables
 local fireTimer
 
-local playerStats =																															-- Player ammo, life, status, etc.
+-- Player ammo, life, status, etc.
+local playerStats =
 {
 	maxLife = 10,
 	minLife = 0,
@@ -41,12 +42,19 @@ local playerStats =																															-- Player ammo, life, status, 
 local physics = require("physics")
 local spriteSheets = require("Images.spriteSheets")
 
-physics.start()																																	-- Initialization
+-- Initialization
+physics.start()
 physics.setGravity( 0, 0 )
 native.setProperty( "mouseCursorVisible", false )
 
+print(spriteSheets.playerOptions, spriteSheets.bullet1Options, spriteSheets.bullet2Options)
+-- Image sheets
 local playerSheet = graphics.newImageSheet("Images/shipSpriteSheet1.png",
 spriteSheets.playerOptions)
+local bullet1Sheet = graphics.newImageSheet("Images/bullet1_sheet.png",
+spriteSheets.bullet1Options)
+local bullet2Sheet = graphics.newImageSheet("Images/bullet2_sheet.png",
+spriteSheets.bullet2Options)
 
 -- -----------------------------------------------------------------------------------
 -- Scene event functions
@@ -89,17 +97,28 @@ function scene:create( event ) 																									-- create()
 	bg6.x = bg2.x - bg2.width
 	bg6.y = bg2.y
 
-	--boundary
-	local boundaryLeft = display.newRect ( bgGroup, 125,
-	display.contentHeight - 225,
-	250, 250 )
-	boundaryLeft:setFillColor ( 1, 0, 0, 0 )
-	local boundaryRight = display.newRect ( bgGroup, display.contentWidth - 125,
-	display.contentHeight - 225,
-	250, 250 )
-	boundaryRight:setFillColor ( 1, 0, 0, 0 )
-	physics.addBody( boundaryLeft, "static" )
-	physics.addBody( boundaryRight, "static" )
+	--boundary constructor
+	local function makeBoundaries ( x )
+		local self = {}
+		self = display.newRect ( bgGroup, x, display.contentHeight - 225,
+		250, 250 )
+		self:setFillColor ( 1, 0, 0, 0.25 )
+		physics.addBody( self, "static" )
+		self.myName = "boundary"
+		self.fill.effect = "generator.linearGradient"
+		if ( x == 125 ) then
+			self.fill.effect.color1 = { 0, 0, 0, 0 }
+			self.fill.effect.color2 = { 1, 0, 0, 0.5 }
+		else
+			self.fill.effect.color1 = { 1, 0, 0, 0.5 }
+			self.fill.effect.color2 = { 0, 0, 0, 0 }
+		end
+		self.fill.effect.position1  = { 0, 0 }
+		self.fill.effect.position2  = { 1, 0 }
+		return self
+	end
+	local boundaryLeft = makeBoundaries( 125 )
+	local boundaryRight = makeBoundaries( display.contentWidth - 125 )
 
 	-- Player UI
 	local uiBack = display.newRect( uiGroup, display.contentCenterX,
@@ -158,6 +177,7 @@ function scene:create( event ) 																									-- create()
 	spriteSheets.playerSequence)
 	playerSprite.x = display.contentCenterX
 	playerSprite.y = display.contentHeight - 250
+	playerSprite.myName = "player"
 	playerSprite:setSequence("aniRange")
 	playerSprite:setFrame(1)
 	physics.addBody(playerSprite, "dynamic")
@@ -189,8 +209,10 @@ function scene:create( event ) 																									-- create()
 
 	local function fireMain() 																		-- Fire main weapons
 		if playerStats.bulletReady then
-			local newLaser = display.newImageRect( mainGroup, "Images/bullet1.png",
-			11, 31 )
+			local newLaser = display.newSprite( sceneGroup, bullet2Sheet,
+ 			spriteSheets.bullet2Sequence )
+			newLaser:setSequence("normal")
+			newLaser:play()
 			physics.addBody( newLaser, "dynamic", { isSensor=true } )
 			newLaser.isBullet = true
 			newLaser.myName = "laser"
@@ -301,14 +323,28 @@ function scene:create( event ) 																									-- create()
 			playerSprite:setFrame(5)
 		end
 		-- change boundary opacity to warn player
-		local approachingLeft = playerSprite.x - boundaryLeft.x
-		local approachingRight = boundaryRight.x - playerSprite.x
-
+		--local approachingLeft = playerSprite.x - boundaryLeft.x - boundaryLeft.width
+		--local approachingRight = boundaryRight.x - playerSprite.x
+		--print(approachingLeft)
 		-- Preventing a bug where playerSpeed went below zero
 		if (playerSpeed.ySpeed < 0 ) then
 			playerSpeed.ySpeed = 0
 		end
 		playerSprite:setLinearVelocity(playerSpeed.xSpeed, 0)
+	end
+
+
+	-- collision event
+	local function onCollision( event )
+		if ( event.phase == "began" ) then
+			local obj1 = event.object1
+			local obj2 = event.object2
+			if ( ( obj1.myName == "player" and obj2.myName == "boundary" ) or
+			( obj1.myName == "boundary" and obj2.myName == "player" ) )
+			then
+
+			end
+		end
 	end
 
 	-- Keyboard events
@@ -365,6 +401,7 @@ function scene:create( event ) 																									-- create()
 		-- Listeners
 		Runtime:addEventListener( "key", onKeyEvent )
 		Runtime:addEventListener( "enterFrame", frameListener )
+		Runtime:addEventListener( "collision", onCollision )
 
 	end
 
