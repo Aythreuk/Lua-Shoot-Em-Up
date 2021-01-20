@@ -40,21 +40,23 @@ local playerStats =
 
 -- Load additional libraries
 local physics = require("physics")
-local spriteSheets = require("Images.spriteSheets")
+local bulletModule = require("SpriteSheets.Bullets")
+local shipModule = require("SpriteSheets.Ships")
+local printTable = require("Scripts.printTable")
+table.print = printTable
+
+-- Image sheets
+local playerSheet = graphics.newImageSheet("Images/shipSpriteSheet1.png",
+shipModule.playerOptions)
+local bullet1Sheet = graphics.newImageSheet("Images/bullet1_sheet.png",
+bulletModule.bullet1Options)
+local bullet2Sheet = graphics.newImageSheet("Images/bullet2_sheet.png",
+bulletModule.bullet2Options)
 
 -- Initialization
 physics.start()
 physics.setGravity( 0, 0 )
 native.setProperty( "mouseCursorVisible", false )
-
-print(spriteSheets.playerOptions, spriteSheets.bullet1Options, spriteSheets.bullet2Options)
--- Image sheets
-local playerSheet = graphics.newImageSheet("Images/shipSpriteSheet1.png",
-spriteSheets.playerOptions)
-local bullet1Sheet = graphics.newImageSheet("Images/bullet1_sheet.png",
-spriteSheets.bullet1Options)
-local bullet2Sheet = graphics.newImageSheet("Images/bullet2_sheet.png",
-spriteSheets.bullet2Options)
 
 -- -----------------------------------------------------------------------------------
 -- Scene event functions
@@ -67,6 +69,8 @@ function scene:create( event ) 																									-- create()
 
 	-- Variables and stuff  that has to be in the create scope
 	local ammoBarTable, lifeBarTable = {}, {}
+
+
 
 	-- bg constructor
 	local function createBg ()
@@ -174,7 +178,7 @@ function scene:create( event ) 																									-- create()
 
 	-- Sprites
 	local playerSprite = display.newSprite( sceneGroup, playerSheet,
-	spriteSheets.playerSequence)
+	shipModule.playerSequence)
 	playerSprite.x = display.contentCenterX
 	playerSprite.y = display.contentHeight - 250
 	playerSprite.myName = "player"
@@ -206,11 +210,11 @@ function scene:create( event ) 																									-- create()
 		end
 	end
 
-
 	local function fireMain() 																		-- Fire main weapons
 		if playerStats.bulletReady then
 			local newLaser = display.newSprite( sceneGroup, bullet2Sheet,
- 			spriteSheets.bullet2Sequence )
+ 			bulletModule.bullet2Sequence )
+			-- Add sprite listener
 			newLaser:setSequence("normal")
 			newLaser:play()
 			physics.addBody( newLaser, "dynamic", { isSensor=true } )
@@ -218,6 +222,7 @@ function scene:create( event ) 																									-- create()
 			newLaser.myName = "laser"
 			newLaser.x = playerSprite.x
 			newLaser.y = playerSprite.y
+			mainGroup:insert(newLaser)
 			newLaser:toBack()
 			transition.to( newLaser, { y=-40, time=500,
 			onComplete = function() display.remove( newLaser ) end} )
