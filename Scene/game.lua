@@ -35,10 +35,14 @@ local playerStats =
 	minAmmo = 0,
 	currentAmmo = 10,
 	fireRate = 500,
-	bulletReady = true
+	bulletReady = true,
+	rechargeRate = 2000,
+	difficulty = 10,
+	score = 0,
 }
 
 -- Load additional libraries
+local math = require("math")
 local physics = require("physics")
 local bulletModule = require("SpriteSheets.Bullets")
 local shipModule = require("SpriteSheets.Ships")
@@ -52,11 +56,15 @@ local bullet1Sheet = graphics.newImageSheet("Images/bullet1_sheet.png",
 bulletModule.bullet1Options)
 local bullet2Sheet = graphics.newImageSheet("Images/bullet2_sheet.png",
 bulletModule.bullet2Options)
+local enemy1Sheet = graphics.newImageSheet("Images/enemy1_sheet.png",
+shipModule.enemy1Options)
 
 -- Initialization
 physics.start()
 physics.setGravity( 0, 0 )
 native.setProperty( "mouseCursorVisible", false )
+-- Produces a different sequence each time (assuming enough time between invocations)
+math.randomseed( os.time() )
 
 -- -----------------------------------------------------------------------------------
 -- Scene event functions
@@ -105,12 +113,12 @@ function scene:create( event ) 																									-- create()
 	local function makeBoundaries ( x )
 		local self = {}
 		self = display.newRect ( bgGroup, x, display.contentHeight - 225,
-		250, 250 )
+		150, 300 )
 		self:setFillColor ( 1, 0, 0, 0.25 )
 		physics.addBody( self, "static" )
 		self.myName = "boundary"
 		self.fill.effect = "generator.linearGradient"
-		if ( x == 125 ) then
+		if ( x == 75 ) then
 			self.fill.effect.color1 = { 0, 0, 0, 0 }
 			self.fill.effect.color2 = { 1, 0, 0, 0.5 }
 		else
@@ -121,8 +129,8 @@ function scene:create( event ) 																									-- create()
 		self.fill.effect.position2  = { 1, 0 }
 		return self
 	end
-	local boundaryLeft = makeBoundaries( 125 )
-	local boundaryRight = makeBoundaries( display.contentWidth - 125 )
+	local boundaryLeft = makeBoundaries( 75 )
+	local boundaryRight = makeBoundaries( display.contentWidth - 75 )
 
 	-- Player UI
 	local uiBack = display.newRect( uiGroup, display.contentCenterX,
@@ -188,6 +196,54 @@ function scene:create( event ) 																									-- create()
 	mainGroup:insert(playerSprite)
 	playerSprite.isFixedRotation = true
 
+	-- generate level spread
+	local function levelNumSpread ()
+
+	end
+
+	--generate enemy 1
+	local function genEnemy1 ()
+		local self = {}
+		self = display.newSprite ( sceneGroup, enemy1Sheet, shipModule.enemy1Sequence )
+		mainGroup:insert( self )
+		self:setSequence("normal")
+		self:play()
+		self.x = display.contentCenterX -- temp pos
+		self.y = display.contentCenterY -- temp pos
+		physics.addBody( self, "dynamic" )
+		self.myName = "enemy"
+		self.stats = {}
+		local statTotal = 0
+		repeat
+			local rand = math.random( 1, 3 )
+			statTotal = statTotal + rand
+			if not self.stats.health then
+				self.stats.health = rand
+			elseif not self.stats.fireRate then
+				self.stats.fireRate = rand
+			elseif not self.stats.particleSpeed then
+				self.stats.particleSpeed = rand
+			else
+				local rand2 = 0
+				local rand2 = math.random( 1, 3 )
+				if rand2 == 1 then
+					self.stats.health = self.stats.health + rand
+				elseif rand2 == 2 then
+					self.stats.fireRate = self.stats.fireRate + rand
+				elseif rand2 == 3 then
+					self.stats.particleSpeed = self.stats.particleSpeed + rand
+				else
+					print("There has been an error")
+				end
+			end
+		until (statTotal > playerStats.difficulty)
+		local statTotal = 0
+		return self
+	end
+	local enemy1 = genEnemy1()
+	print("Health is " .. enemy1.stats.health, "\nFirerate is " .. enemy1.stats.fireRate,
+	"\nParticle speed is " .. enemy1.stats.particleSpeed )
+
 	-- update health supply
 	local function updateHealth ()
 		for i = playerStats.maxLife, playerStats.minLife + 1, -1 do
@@ -213,13 +269,13 @@ function scene:create( event ) 																									-- create()
 	local function fireMain() 																		-- Fire main weapons
 		if playerStats.bulletReady then
 			local newLaser = display.newSprite( sceneGroup, bullet2Sheet,
- 			bulletModule.bullet2Sequence )
+			bulletModule.bullet2Sequence )
 			-- Add sprite listener
 			newLaser:setSequence("normal")
 			newLaser:play()
 			physics.addBody( newLaser, "dynamic", { isSensor=true } )
 			newLaser.isBullet = true
-			newLaser.myName = "laser"
+			newLaser.myName = "allyBullet"
 			newLaser.x = playerSprite.x
 			newLaser.y = playerSprite.y
 			mainGroup:insert(newLaser)
@@ -231,6 +287,14 @@ function scene:create( event ) 																									-- create()
 			updateAmmo()
 		end
 	end
+
+	local function rechargeAmmo ()
+		if (playerStats.currentAmmo < playerStats.maxAmmo) then
+			playerStats.currentAmmo = playerStats.currentAmmo + 1
+		end
+		updateAmmo()
+	end
+	timer.performWithDelay( playerStats.rechargeRate, rechargeAmmo, 0 )
 
 	local function playerFireTimer ()
 		playerStats.bulletReady = true
@@ -286,6 +350,15 @@ function scene:create( event ) 																									-- create()
 		bg4:translate( -(playerSpeed.xSpeed / 10), playerSpeed.ySpeed / 5)
 		bg5:translate( -(playerSpeed.xSpeed / 10), playerSpeed.ySpeed / 5)
 		bg6:translate( -(playerSpeed.xSpeed / 10), playerSpeed.ySpeed / 5)
+		-- trigger boundaries
+		if (playerSprite.x < 250) then
+			boundaryLeft.alpha = 0.75
+		elseif (playerSprite.x > display.contentWidth - 250) then
+			boundaryRight.alpha = 0.75
+		else
+			boundaryLeft.alpha = 0
+			boundaryRight.alpha = 0
+		end
 	end
 
 	local function keyUpdate ()																										-- WASD function
@@ -327,10 +400,6 @@ function scene:create( event ) 																									-- create()
 		elseif (playerSpeed.xSpeed > (playerSpeed.xMax / 2)) then
 			playerSprite:setFrame(5)
 		end
-		-- change boundary opacity to warn player
-		--local approachingLeft = playerSprite.x - boundaryLeft.x - boundaryLeft.width
-		--local approachingRight = boundaryRight.x - playerSprite.x
-		--print(approachingLeft)
 		-- Preventing a bug where playerSpeed went below zero
 		if (playerSpeed.ySpeed < 0 ) then
 			playerSpeed.ySpeed = 0
@@ -342,13 +411,23 @@ function scene:create( event ) 																									-- create()
 	-- collision event
 	local function onCollision( event )
 		if ( event.phase == "began" ) then
+
 			local obj1 = event.object1
 			local obj2 = event.object2
-			if ( ( obj1.myName == "player" and obj2.myName == "boundary" ) or
-			( obj1.myName == "boundary" and obj2.myName == "player" ) )
-			then
-
+			if ( obj1.myName == "allyBullet" and obj2.myName == "enemy" ) then
+				display.remove( obj1 )
+				obj2.stats.health = obj2.stats.health - 1
+				if ( obj2.stats.health <= 0 ) then
+					display.remove( obj2 )
+				end
+			elseif ( obj1.myName == "enemy" and obj2.myName == "allyBullet" ) then
+				display.remove( obj2 )
+				obj1.stats.health = obj1.stats.health - 1
+				if ( obj1.stats.health <= 0 ) then
+					display.remove( obj1 )
+				end
 			end
+
 		end
 	end
 
