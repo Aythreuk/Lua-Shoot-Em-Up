@@ -196,53 +196,70 @@ function scene:create( event ) 																									-- create()
 	mainGroup:insert(playerSprite)
 	playerSprite.isFixedRotation = true
 
-	-- generate level spread
-	local function levelNumSpread ()
 
-	end
+	local MyClass = {}
+MyClass.__index = MyClass
 
-	--generate enemy 1
-	local function genEnemy1 ()
-		local self = {}
-		self = display.newSprite ( sceneGroup, enemy1Sheet, shipModule.enemy1Sequence )
-		mainGroup:insert( self )
-		self:setSequence("normal")
-		self:play()
-		self.x = display.contentCenterX -- temp pos
-		self.y = display.contentCenterY -- temp pos
-		physics.addBody( self, "dynamic" )
-		self.myName = "enemy"
-		self.stats = {}
-		local statTotal = 0
-		repeat
-			local rand = math.random( 1, 3 )
-			statTotal = statTotal + rand
-			if not self.stats.health then
-				self.stats.health = rand
-			elseif not self.stats.fireRate then
-				self.stats.fireRate = rand
-			elseif not self.stats.particleSpeed then
-				self.stats.particleSpeed = rand
+setmetatable(MyClass, {
+  __call = function (cls, ...)
+    return cls.new(...)
+  end,
+})
+
+function MyClass.new()
+  local self = setmetatable({}, MyClass)
+	self = display.newSprite ( sceneGroup, enemy1Sheet, shipModule.enemy1Sequence )
+	mainGroup:insert( self )
+	self:setSequence("normal")
+	self:play()
+	self.x = display.contentCenterX -- temp pos
+	self.y = 300 -- temp pos
+	physics.addBody( self, "dynamic" )
+	self.myName = "enemy"
+	self.stats = {}
+	local statTotal = 0
+	repeat
+		local rand = math.random( 1, 3 )
+		statTotal = statTotal + rand
+		if not self.stats.health then
+			self.stats.health = rand
+		elseif not self.stats.fireRate then
+			self.stats.fireRate = rand
+		elseif not self.stats.particleSpeed then
+			self.stats.particleSpeed = rand
+		else
+			local rand2 = 0
+			local rand2 = math.random( 1, 3 )
+			if rand2 == 1 then
+				self.stats.health = self.stats.health + rand
+			elseif rand2 == 2 then
+				self.stats.fireRate = self.stats.fireRate + rand
+			elseif rand2 == 3 then
+				self.stats.particleSpeed = self.stats.particleSpeed + rand
 			else
-				local rand2 = 0
-				local rand2 = math.random( 1, 3 )
-				if rand2 == 1 then
-					self.stats.health = self.stats.health + rand
-				elseif rand2 == 2 then
-					self.stats.fireRate = self.stats.fireRate + rand
-				elseif rand2 == 3 then
-					self.stats.particleSpeed = self.stats.particleSpeed + rand
-				else
-					print("There has been an error")
-				end
+				print("There has been an error")
 			end
-		until (statTotal > playerStats.difficulty)
-		local statTotal = 0
-		return self
-	end
-	local enemy1 = genEnemy1()
-	print("Health is " .. enemy1.stats.health, "\nFirerate is " .. enemy1.stats.fireRate,
-	"\nParticle speed is " .. enemy1.stats.particleSpeed )
+		end
+	until (statTotal > playerStats.difficulty)
+	local statTotal = 0
+  return self
+end
+
+function MyClass.moveEnemy( enemy )
+	local rand = math.random( -100, 100 )
+	enemy:setLinearVelocity( rand, 0 )
+end
+
+function MyClass.get_value(self)
+  return self.value
+end
+
+local instance = MyClass()
+MyClass.moveEnemy(instance)
+
+-- do stuff with instance...
+
+
 
 	-- update health supply
 	local function updateHealth ()
