@@ -196,70 +196,92 @@ function scene:create( event ) 																									-- create()
 	mainGroup:insert(playerSprite)
 	playerSprite.isFixedRotation = true
 
-
+	-- create enemy 1
 	local MyClass = {}
-MyClass.__index = MyClass
+	MyClass.__index = MyClass
 
-setmetatable(MyClass, {
-  __call = function (cls, ...)
-    return cls.new(...)
-  end,
-})
+	setmetatable(MyClass, {
+		__call = function (cls, ...)
+			return cls.new(...)
+		end,
+	})
 
-function MyClass.new()
-  local self = setmetatable({}, MyClass)
-	self = display.newSprite ( sceneGroup, enemy1Sheet, shipModule.enemy1Sequence )
-	mainGroup:insert( self )
-	self:setSequence("normal")
-	self:play()
-	self.x = display.contentCenterX -- temp pos
-	self.y = 300 -- temp pos
-	physics.addBody( self, "dynamic" )
-	self.myName = "enemy"
-	self.stats = {}
-	local statTotal = 0
-	repeat
-		local rand = math.random( 1, 3 )
-		statTotal = statTotal + rand
-		if not self.stats.health then
-			self.stats.health = rand
-		elseif not self.stats.fireRate then
-			self.stats.fireRate = rand
-		elseif not self.stats.particleSpeed then
-			self.stats.particleSpeed = rand
-		else
-			local rand2 = 0
-			local rand2 = math.random( 1, 3 )
-			if rand2 == 1 then
-				self.stats.health = self.stats.health + rand
-			elseif rand2 == 2 then
-				self.stats.fireRate = self.stats.fireRate + rand
-			elseif rand2 == 3 then
-				self.stats.particleSpeed = self.stats.particleSpeed + rand
+	function MyClass.new( x, y )
+		local self = setmetatable({}, MyClass)
+		self = display.newSprite ( sceneGroup, enemy1Sheet, shipModule.enemy1Sequence )
+		mainGroup:insert( self )
+		self:setSequence("normal")
+		self:play()
+		self.x = x
+		self.y = y
+		physics.addBody( self, "dynamic" )
+		self.myName = "enemy"
+		self.stats = {}
+		local statTotal = 0
+		repeat
+			local rand = math.random( 1, 3 )
+			statTotal = statTotal + rand
+			if not self.stats.health then
+				self.stats.health = rand
+			elseif not self.stats.fireRate then
+				self.stats.fireRate = rand
+			elseif not self.stats.particleSpeed then
+				self.stats.particleSpeed = rand
 			else
-				print("There has been an error")
+				local rand2 = 0
+				local rand2 = math.random( 1, 3 )
+				if rand2 == 1 then
+					self.stats.health = self.stats.health + rand
+				elseif rand2 == 2 then
+					self.stats.fireRate = self.stats.fireRate + rand
+				elseif rand2 == 3 then
+					self.stats.particleSpeed = self.stats.particleSpeed + rand
+				else
+					print("There has been an error")
+				end
 			end
+		until (statTotal > playerStats.difficulty)
+
+		-- Move the enemy
+		local function moveEnemy( enemy )
+			local rand = math.random( -100, 100 )
+			enemy:setLinearVelocity( rand, 0 )
 		end
-	until (statTotal > playerStats.difficulty)
-	local statTotal = 0
-  return self
-end
 
-function MyClass.moveEnemy( enemy )
-	local rand = math.random( -100, 100 )
-	enemy:setLinearVelocity( rand, 0 )
-end
+		-- Make the enemy fire
+		local function enemyFire ( enemy )
+			local randAngle = (math.random( 1, 100 )) / 100
+			local newLaser = display.newSprite( sceneGroup, bullet1Sheet,
+			bulletModule.bullet1Sequence )
+			newLaser.rotation = randAngle * 180
+			-- Add sprite listener
+			newLaser:setSequence("normal")
+			newLaser:play()
+			physics.addBody( newLaser, "dynamic", { isSensor=true } )
+			newLaser.isBullet = true
+			newLaser.myName = "enemyBullet"
+			newLaser.x = enemy.x
+			newLaser.y = enemy.y
+			mainGroup:insert(newLaser)
+			newLaser:toBack()
+			transition.to( newLaser, { y= display.contentHeight + 50,
+ 			x = randAngle * display.contentWidth, time=5000,
+			onComplete = function() display.remove( newLaser ) end} )
+		end
 
-function MyClass.get_value(self)
-  return self.value
-end
+		-- Call enemy behaviours
+		local myClosure1 = function() return moveEnemy ( self ) end
+		self.tm1 = timer.performWithDelay( 2000, myClosure1, 0 )
+		local myClosure2 = function() return enemyFire ( self ) end
+		self.tm2 = timer.performWithDelay( 2000, myClosure2, 0 )
 
-local instance = MyClass()
-MyClass.moveEnemy(instance)
+		local statTotal = 0
+		return self
+	end
 
--- do stuff with instance...
-
-
+	local instance = MyClass( display.contentCenterX, 300 )
+	local instance2 = MyClass( display.contentCenterX, 600 )
+	printTable(instance)
 
 	-- update health supply
 	local function updateHealth ()
@@ -435,13 +457,19 @@ MyClass.moveEnemy(instance)
 				display.remove( obj1 )
 				obj2.stats.health = obj2.stats.health - 1
 				if ( obj2.stats.health <= 0 ) then
-					display.remove( obj2 )
+					timer.cancel(obj2.tm1)
+					timer.cancel(obj2.tm2)
+					obj2:removeSelf()
+					obj2 = nil
 				end
 			elseif ( obj1.myName == "enemy" and obj2.myName == "allyBullet" ) then
 				display.remove( obj2 )
 				obj1.stats.health = obj1.stats.health - 1
 				if ( obj1.stats.health <= 0 ) then
-					display.remove( obj1 )
+					timer.cancel(obj1.tm1)
+					timer.cancel(obj1.tm2)
+					obj1:removeSelf()
+					obj1 = nil
 				end
 			end
 
