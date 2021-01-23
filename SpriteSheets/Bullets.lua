@@ -7,29 +7,29 @@ bulletsModule.bullet1Options =																										-- Frames for player spr
       -- frame1
       x=0,
       y=0,
-      width=14,
-      height=29
+      width=8,
+      height=17
     },
     {
       -- frame2
-      x=14,
-      y=0,
-      width=12,
-      height=25
-    },
-    {
-      -- frame3
-      x=26,
+      x=8,
       y=0,
       width=10,
       height=21
     },
     {
-      -- frame4
-      x=36,
+      -- frame3
+      x=18,
       y=0,
-      width=8,
-      height=17
+      width=12,
+      height=25
+    },
+    {
+      -- frame4
+      x=30,
+      y=0,
+      width=14,
+      height=29
     },
   },
   --optional parameters; used for scaled content support
@@ -43,9 +43,8 @@ bulletsModule.bullet1Sequence = {
     name = "normal",
     start = 1,
     count = 4,
-    time = 800,
-    loopCount = 0,
-    loopDirection = "forward"
+    time = 1600,
+    loopCount = 1
   }
 }
 

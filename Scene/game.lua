@@ -37,7 +37,7 @@ local playerStats =
 	fireRate = 500,
 	bulletReady = true,
 	rechargeRate = 2000,
-	difficulty = 10,
+	score = 10,
 	score = 0,
 }
 
@@ -206,34 +206,51 @@ function scene:create( event ) 																									-- create()
 		end,
 	})
 
-	function MyClass.new( x, y )
+	function MyClass.new()
 		local self = setmetatable({}, MyClass)
 		self = display.newSprite ( sceneGroup, enemy1Sheet, shipModule.enemy1Sequence )
 		mainGroup:insert( self )
 		self:setSequence("normal")
 		self:play()
-		self.x = x
-		self.y = y
 		physics.addBody( self, "dynamic" )
 		self.isFixedRotation = true
 		self.myName = "enemy"
 		self.stats = {}
+		self.stats.maxFireRate = 45 -- Had to declare these out here for scoping
+		self.stats.health = 0
+		self.stats.fireRate = 0
+		self.stats.particleSpeed = 0
+		-- Let's spawn on a random side
+		local randomSide = math.random( 1, 3 ) -- 1 is west, 2 is north, 3 is east
+		if (randomSide == 1) then
+			self.x = -50
+			self.y = math.random( -50, display.contentHeight / 2 )
+		elseif (randomSide == 2) then
+			self.x = math.random( -50, display.contentWidth )
+			self.y = -50
+		else
+			self.x = display.contentWidth + 50
+			self.y = math.random( -50, display.contentHeight / 2 )
+		end
+		-- Assign random stats to enemy
 		local statTotal = 0
 		repeat
+			-- Make sure there is at least one point in everything
 			local rand = math.random( 1, 3 )
 			statTotal = statTotal + rand
-			if not self.stats.health then
+			if self.stats.health == 0 then
 				self.stats.health = rand
-			elseif not self.stats.fireRate then
+			elseif self.stats.fireRate == 0 then
 				self.stats.fireRate = rand
-			elseif not self.stats.particleSpeed then
+			elseif self.stats.particleSpeed == 0 then
 				self.stats.particleSpeed = rand
 			else
+				-- Randomly dish out remaining points
 				local rand2 = 0
 				local rand2 = math.random( 1, 3 )
 				if rand2 == 1 then
 					self.stats.health = self.stats.health + rand
-				elseif rand2 == 2 then
+				elseif (rand2 == 2 and self.stats.fireRate < self.stats.maxFireRate - 3) then
 					self.stats.fireRate = self.stats.fireRate + rand
 				elseif rand2 == 3 then
 					self.stats.particleSpeed = self.stats.particleSpeed + rand
@@ -241,15 +258,39 @@ function scene:create( event ) 																									-- create()
 					print("There has been an error")
 				end
 			end
-		until (statTotal > playerStats.difficulty)
-
-		-- Move the enemy
+		until (statTotal > playerStats.score)
+		-- Move function
 		local function moveEnemy( enemy )
-			local rand = math.random( -100, 100 )
-			enemy:setLinearVelocity( rand, 0 )
+			local randX, randY = math.random( -100, 100 ), math.random( -100, 100 )
+			enemy:setLinearVelocity( randX, randY )
 		end
-
-		-- Make the enemy fire
+		-- Smooth out movement and keep on screen
+		local function enemyUpdate ( enemy )
+			local xVel, yVel = enemy:getLinearVelocity()
+			-- shepherd back onto the screen
+			local xPush, yPush
+			if ( enemy.x < 50 and xVel < 0 ) then
+				xPush = math.random( 0, 100 )
+				print("Readjusting")
+			elseif ( enemy.x > (display.contentWidth -50) and xVel > 0 ) then
+				xPush = -(math.random( 0, 100 ))
+print("Readjusting")
+			end
+			if ( enemy.y < 50 and yVel < 0 ) then
+				yPush = math.random( 0, 100 )
+print("Readjusting")
+			elseif ( enemy.y > (display.contentHeight / 2) and yVel > 0 ) then
+				yPush = -(math.random( 0, 100 ))
+print("Readjusting")
+			end
+			enemy:setLinearVelocity( xPush, yPush )
+			-- smooth out movement
+			local newXVel, newYVel
+			if xVel > 0 then newXVel = xVel - 1 end
+			if yVel > 0 then newYVel = yVel - 1 end
+			enemy:setLinearVelocity ( newXVel, newYVel )
+		end
+		-- Attack function
 		local function enemyFire ( enemy )
 			local newLaser = display.newSprite( sceneGroup, bullet1Sheet,
 			bulletModule.bullet1Sequence )
@@ -263,31 +304,30 @@ function scene:create( event ) 																									-- create()
 			newLaser.y = enemy.y
 			mainGroup:insert(newLaser)
 			newLaser:toBack()
-
 			local randX = ((math.random( 0, 100 )) / 100) * display.contentWidth
 			transition.to( newLaser, { y= display.contentHeight + 50,
- 			x = randX, time=5000,
+			x = randX, time=5000,
 			onComplete = function() display.remove( newLaser ) end} )
 			newLaser.isFixedRotation = true
 			local adjVar = display.contentHeight - enemy.y
 			local oppVar = randX - enemy.x
 			newLaser.rotation = -((math.atan( oppVar / adjVar )) * 180 / math.pi)
-
 		end
 
 		-- Call enemy behaviours
+		local fireTime = 5000 - self.stats.fireRate * 100
 		local myClosure1 = function() return moveEnemy ( self ) end
-		self.tm1 = timer.performWithDelay( 2000, myClosure1, 0 )
+		self.tm1 = timer.performWithDelay( 5000, myClosure1, 0 )
 		local myClosure2 = function() return enemyFire ( self ) end
-		self.tm2 = timer.performWithDelay( 2000, myClosure2, 0 )
+		self.tm2 = timer.performWithDelay( fireTime, myClosure2, 0 )
+		local myClosure3 = function() return enemyUpdate ( self ) end
+		self.tm3 = timer.performWithDelay( 250, myClosure3, 0 )
 
 		local statTotal = 0
 		return self
 	end
 
-	local instance = MyClass( display.contentCenterX, 300 )
-	local instance2 = MyClass( display.contentCenterX, 300 )
-	printTable(instance)
+	local instance1 = MyClass()
 
 	-- update health supply
 	local function updateHealth ()
@@ -389,12 +429,12 @@ function scene:create( event ) 																									-- create()
 			bg5.x = bg1.x + bg1.width
 			bg6.x = bg2.x + bg2.width
 		end
-		bg1:translate( -(playerSpeed.xSpeed / 10), playerSpeed.ySpeed / 5)
-		bg2:translate( -(playerSpeed.xSpeed / 10), playerSpeed.ySpeed / 5)
-		bg3:translate( -(playerSpeed.xSpeed / 10), playerSpeed.ySpeed / 5)
-		bg4:translate( -(playerSpeed.xSpeed / 10), playerSpeed.ySpeed / 5)
-		bg5:translate( -(playerSpeed.xSpeed / 10), playerSpeed.ySpeed / 5)
-		bg6:translate( -(playerSpeed.xSpeed / 10), playerSpeed.ySpeed / 5)
+		bg1:translate( -(playerSpeed.xSpeed / 20), playerSpeed.ySpeed / 5)
+		bg2:translate( -(playerSpeed.xSpeed / 20), playerSpeed.ySpeed / 5)
+		bg3:translate( -(playerSpeed.xSpeed / 20), playerSpeed.ySpeed / 5)
+		bg4:translate( -(playerSpeed.xSpeed / 20), playerSpeed.ySpeed / 5)
+		bg5:translate( -(playerSpeed.xSpeed / 20), playerSpeed.ySpeed / 5)
+		bg6:translate( -(playerSpeed.xSpeed / 20), playerSpeed.ySpeed / 5)
 		-- trigger boundaries
 		if (playerSprite.x < 250) then
 			boundaryLeft.alpha = 0.75
@@ -465,6 +505,7 @@ function scene:create( event ) 																									-- create()
 				if ( obj2.stats.health <= 0 ) then
 					timer.cancel(obj2.tm1)
 					timer.cancel(obj2.tm2)
+					timer.cancel(obj2.tm3)
 					obj2:removeSelf()
 					obj2 = nil
 				end
@@ -474,6 +515,7 @@ function scene:create( event ) 																									-- create()
 				if ( obj1.stats.health <= 0 ) then
 					timer.cancel(obj1.tm1)
 					timer.cancel(obj1.tm2)
+					timer.cancel(obj1.tm3)
 					obj1:removeSelf()
 					obj1 = nil
 				end
