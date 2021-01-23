@@ -15,12 +15,14 @@ settings =
     },
     window=
     {
+        defaultMode = "fullscreen",
         defaultViewWidth = 1920,
         defaultViewHeight = 1080,
         enableCloseButton = false,
-        enableMaximizeButton = true,
+        enableMaximizeButton = false,
+        enableMinimizeButton = false,
         suspendWhenMinimized = true,
-        titleText  = 
+        titleText  =
             {
             default = "SolarTest",
             ["jp"] = "ソーラーテスト"

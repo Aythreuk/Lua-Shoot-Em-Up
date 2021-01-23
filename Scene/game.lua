@@ -215,6 +215,7 @@ function scene:create( event ) 																									-- create()
 		self.x = x
 		self.y = y
 		physics.addBody( self, "dynamic" )
+		self.isFixedRotation = true
 		self.myName = "enemy"
 		self.stats = {}
 		local statTotal = 0
@@ -250,10 +251,8 @@ function scene:create( event ) 																									-- create()
 
 		-- Make the enemy fire
 		local function enemyFire ( enemy )
-			local randAngle = (math.random( 1, 100 )) / 100
 			local newLaser = display.newSprite( sceneGroup, bullet1Sheet,
 			bulletModule.bullet1Sequence )
-			newLaser.rotation = randAngle * 180
 			-- Add sprite listener
 			newLaser:setSequence("normal")
 			newLaser:play()
@@ -264,9 +263,16 @@ function scene:create( event ) 																									-- create()
 			newLaser.y = enemy.y
 			mainGroup:insert(newLaser)
 			newLaser:toBack()
+
+			local randX = ((math.random( 0, 100 )) / 100) * display.contentWidth
 			transition.to( newLaser, { y= display.contentHeight + 50,
- 			x = randAngle * display.contentWidth, time=5000,
+ 			x = randX, time=5000,
 			onComplete = function() display.remove( newLaser ) end} )
+			newLaser.isFixedRotation = true
+			local adjVar = display.contentHeight - enemy.y
+			local oppVar = randX - enemy.x
+			newLaser.rotation = -((math.atan( oppVar / adjVar )) * 180 / math.pi)
+
 		end
 
 		-- Call enemy behaviours
@@ -280,7 +286,7 @@ function scene:create( event ) 																									-- create()
 	end
 
 	local instance = MyClass( display.contentCenterX, 300 )
-	local instance2 = MyClass( display.contentCenterX, 600 )
+	local instance2 = MyClass( display.contentCenterX, 300 )
 	printTable(instance)
 
 	-- update health supply
