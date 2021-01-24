@@ -57,7 +57,6 @@ bulletsModule.bullet2Options =																										-- Frames for player spr
       y=0,
       width=9,
       height=29,
-
     },
     {
       -- frame2
@@ -65,7 +64,6 @@ bulletsModule.bullet2Options =																										-- Frames for player spr
       y=0,
       width=9,
       height=29,
-
     },
     {
       -- frame3
@@ -80,7 +78,6 @@ bulletsModule.bullet2Options =																										-- Frames for player spr
       y=0,
       width=9,
       height=29,
-
     },
     {
       -- frame5
@@ -88,7 +85,6 @@ bulletsModule.bullet2Options =																										-- Frames for player spr
       y=0,
       width=9,
       height=29,
-
     },
     {
       -- frame6
@@ -110,6 +106,37 @@ bulletsModule.bullet2Sequence = {
     loopCount = 0,
     loopDirection = "forward"
   }
+}
+
+bulletsModule.laser1Options =
+{
+  frames = {
+    {
+      --frame1
+      x = 0,
+      y = 0,
+      width = 520,
+      height = 70,
+    },
+    {
+      --frame2
+      x = 0,
+      y = 70,
+      width = 520,
+      height = 74,
+    },
+  },
+  --optional parameters; used for scaled content support
+  sheetContentWidth = 520,  -- width of original 1x size of entire sheet
+  sheetContentHeight = 144,   -- height of original 1x size of entire sheet
+}
+
+bulletsModule.laser1Sequence = {
+  name = "normal",
+  start = 1,
+  count = 2,
+  time = 200,
+  loopCount = 0,
 }
 
 return bulletsModule
