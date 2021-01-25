@@ -340,12 +340,6 @@ function scene:create( event ) 																									-- create()
 		physics.addBody( self, "dynamic" )
 		self.isFixedRotation = true
 		self.myName = "enemy"
-		self.tm1 = false
-		self.tm2 = false
-		self.tm3 = false
-		self.tm4 = false
-		self.tm5 = false
-		self.tm6 = false
 		self.stats = {} -- Had to declare these out here for scoping
 		self.stats.maxFireRate = 40
 		self.stats.maxParticleSpeed = 40
@@ -396,7 +390,17 @@ function scene:create( event ) 																									-- create()
 		until (statTotal > playerStats.score)
 		print("Health: ", self.stats.health, "\nFire rate is: ", self.stats.fireRate,
 		"\nParticle speed is: ", self.stats.particleSpeed)
-
+		-- create "beam"
+		local x1, y1 = self.x, self.y + self.height / 2
+		local x2, y2 = math.random(self.x - 1000, self.x + 1000), display.contentHeight + 1000
+		local newPointer = display.newLine( sceneGroup, x1, y1, x2, y2 )
+		newPointer:setStrokeColor( 1, 0, 0, 0 )
+		newPointer.strokeWidth = 4
+		mainGroup:insert(newPointer)
+		newPointer:toBack()
+		physics.addBody( newPointer, "dynamic", { isSensor=true } )
+		newPointer.isBullet = true
+		newPointer.myName = "enemyBullet"
 		-- Move function
 		local function moveEnemy( enemy )
 			local randX, randY = math.random( -100, 100 ), math.random( -100, 100 )
@@ -425,92 +429,44 @@ function scene:create( event ) 																									-- create()
 			if yVel < 0 then yVel = yVel + 1 end
 			enemy:setLinearVelocity( xVel, yVel )
 		end
-
-
-		-- warn player
-		local fireCycleStage = 1
-		local function fireCycle ()
-
-			-- reset function
-			local function resetLaser ()
-
-			end
-
-			-- Attack function
-			local function enemyFire ()
-				print("Beam: fire mode")
-				self.stats.beamActive = true
-				newPointer.strokeWidth = 10
-				newPointer:setStrokeColor( 1, 0, 0, 1 )
-				fireCycleStage = 4
-				self.tm5 = false
-			end
-
-			-- cease fire
-			local function stopFiring ()
-				display.remove(newPointer)
-				newPointer = nil
-				print("Beam: standby mode")
-				self.stats.beamActive = false
-				self.tm6 = false
-
-			end
-
-			local function warnPlayer ()
-				print("Beam: warn player mode")
-				newPointer:setStrokeColor( 1, 0, 0, 0.5 )
-				fireCycleStage == 3
-				self.tm4 = false
-			end
-
-			if (fireCycleStage == 1 and not NewPointer) then
-				-- create "beam"
-				local x1, y1 = self.x, self.y + self.height / 2
-				local x2, y2 = math.random(self.x - 1000, self.x + 1000), display.contentHeight + 1000
-				local newPointer = display.newLine( sceneGroup, x1, y1, x2, y2 )
-				newPointer:setStrokeColor( 1, 0, 0, 0 )
-				newPointer.strokeWidth = 4
-				mainGroup:insert(newPointer)
-				newPointer:toBack()
-				physics.addBody( newPointer, "dynamic", { isSensor=true } )
-				newPointer.isBullet = true
-				newPointer.myName = "enemyBullet"
-				fireCycleStage = 2
-			end
-
-			if (fireCycleStage == 2 and self.tm4 == false) then
-				self.tm4 = timer.performWithDelay( 2000, warnPlayer )
-			end
-
-			if (fireCycleStage == 3 and self.tm5 == false) then
-				self.tm5 = timer.performWithDelay( 2000, enemyFire )
-			end
-
-			if (fireCycleStage == 4 and self.tm6 == false) then
-				self.tm6 = timer.performWithDelay( 2000, stopFiring )
-			end
-
-			-- update beam position
-			if newPointer then
-				newPointer.x = self.x
-				newPointer.y = self.y + self.height / 2
-			end
+		-- cease fire
+		local function stopFiring ()
+			print("Beam: standby mode")
+			self.stats.beamActive = false
+			newPointer.strokeWidth = 4
+			newPointer:setStrokeColor( 1, 0, 0, 0 )
 		end
-
-
-
-		self.tm3 = timer.performWithDelay( 25, fireCycle, 0 )
-
-		local newFireTime = 10000 - self.stats.fireRate * 100
-		local newParticleTime = 5000 - self.stats.particleSpeed * 50
+		-- Attack function
+		local function enemyFire ()
+			print("Beam: fire mode")
+			self.stats.beamActive = true
+			newPointer.strokeWidth = 10
+			newPointer:setStrokeColor( 1, 0, 0, 1 )
+			timer.performWithDelay( 2000, stopFiring )
+		end
+		-- warn player
+		local function warnPlayer ()
+			print("Beam: warn player mode")
+			newPointer:setStrokeColor( 1, 0, 0, 0.5 )
+			timer.performWithDelay( 2000, enemyFire )
+		end
+		-- update beam position
+		local function beamUpdate ()
+			newPointer.x = self.x
+			newPointer.y = self.y + self.height / 2
+		end
 		-- Call enemy behaviours
+		local newFireTime = 10000 - self.stats.fireRate * 100
+		print("Laser will begin every: ", newFireTime)
+		local newParticleTime = 5000 - self.stats.particleSpeed * 50
 		local myClosure1 = function() return moveEnemy () end
 		self.tm1 = timer.performWithDelay( math.random( 4000, 6000 ), myClosure1, 0 )
-		timer.performWithDelay()
-		local myClosure2 = function() return enemyUpdate ( self ) end
-		self.tm2 = timer.performWithDelay( 250, myClosure2, 0 )
-
-
+		local myClosure2 = function() return warnPlayer () end
+		self.tm2 = timer.performWithDelay( newFireTime, myClosure2, 0 )
+		local myClosure3 = function() return enemyUpdate ( self ) end
+		self.tm3 = timer.performWithDelay( 250, myClosure3, 0 )
+		local myClosure4 = function() return beamUpdate () end
+		self.tm4 = timer.performWithDelay( 25, myClosure4, 0 )
 		local statTotal = 0
 		return self
 	end
