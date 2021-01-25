@@ -391,16 +391,27 @@ function scene:create( event ) 																									-- create()
 		print("Health: ", self.stats.health, "\nFire rate is: ", self.stats.fireRate,
 		"\nParticle speed is: ", self.stats.particleSpeed)
 		-- create "beam"
-		local x1, y1 = self.x, self.y + self.height / 2
-		local x2, y2 = math.random(self.x - 1000, self.x + 1000), display.contentHeight + 1000
-		local newPointer = display.newLine( sceneGroup, x1, y1, x2, y2 )
-		newPointer:setStrokeColor( 1, 0, 0, 0 )
-		newPointer.strokeWidth = 4
-		mainGroup:insert(newPointer)
-		newPointer:toBack()
-		physics.addBody( newPointer, "dynamic", { isSensor=true } )
-		newPointer.isBullet = true
-		newPointer.myName = "enemyBullet"
+		local _BEAM = nil
+		local function newBeam()
+			local obj = nil
+			local x1, y1 = self.x, self.y + self.height / 2
+
+			local function getBeamEnd ( startX ) 
+				return math.random(startX - 1000, startX + 1000), display.contentHeight + 1000
+			end
+	
+			local x2, y2 = getBeamEnd(self.x)
+			obj = display.newLine( sceneGroup, x1, y1, x2, y2 )
+			obj:setStrokeColor( 1, 0, 0, 0 )
+			obj.strokeWidth = 4
+			mainGroup:insert(obj)
+			obj:toBack()
+			physics.addBody( obj, "dynamic", { isSensor=true } )
+			obj.isBullet = true
+			obj.myName = "enemyBullet"
+			return obj
+		end
+		_BEAM = newBeam()
 		-- Move function
 		local function moveEnemy( enemy )
 			local randX, randY = math.random( -100, 100 ), math.random( -100, 100 )
@@ -433,27 +444,29 @@ function scene:create( event ) 																									-- create()
 		local function stopFiring ()
 			print("Beam: standby mode")
 			self.stats.beamActive = false
-			newPointer.strokeWidth = 4
-			newPointer:setStrokeColor( 1, 0, 0, 0 )
+			_BEAM.strokeWidth = 4
+			_BEAM:setStrokeColor( 1, 0, 0, 0 )
+			_BEAM = newBeam()
 		end
 		-- Attack function
 		local function enemyFire ()
 			print("Beam: fire mode")
 			self.stats.beamActive = true
-			newPointer.strokeWidth = 10
-			newPointer:setStrokeColor( 1, 0, 0, 1 )
+			_BEAM.strokeWidth = 10
+			_BEAM:setStrokeColor( 1, 0, 0, 1 )
 			timer.performWithDelay( 2000, stopFiring )
 		end
 		-- warn player
 		local function warnPlayer ()
 			print("Beam: warn player mode")
-			newPointer:setStrokeColor( 1, 0, 0, 0.5 )
+			_BEAM:setStrokeColor( 1, 0, 0, 0.5 )
 			timer.performWithDelay( 2000, enemyFire )
 		end
 		-- update beam position
 		local function beamUpdate ()
-			newPointer.x = self.x
-			newPointer.y = self.y + self.height / 2
+			_BEAM.x = self.x
+			_BEAM.y = self.y + self.height / 2
+			
 		end
 		-- Call enemy behaviours
 		local newFireTime = 10000 - self.stats.fireRate * 100
@@ -473,6 +486,7 @@ function scene:create( event ) 																									-- create()
 
 	local instance1 = EnemyClass.newBomber()
 	local instance2 = EnemyClass.newDestroyer()
+	local instance3 = EnemyClass.newDestroyer()
 
 	-- update health supply
 	local function updateHealth ()
