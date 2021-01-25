@@ -115,34 +115,27 @@ bulletsModule.laser1Options =
       --frame1
       x = 0,
       y = 0,
-      width = 30,
-      height = 600,
+      width = 520,
+      height = 70,
     },
     {
       --frame2
       x = 0,
-      y = 600,
-      width = 30,
-      height = 600,
-    },
-    {
-      --frame3
-      x = 0,
-      y = 1200,
-      width = 30,
-      height = 600,
+      y = 70,
+      width = 520,
+      height = 74,
     },
   },
   --optional parameters; used for scaled content support
-  sheetContentWidth = 30,  -- width of original 1x size of entire sheet
-  sheetContentHeight = 1800,   -- height of original 1x size of entire sheet
+  sheetContentWidth = 520,  -- width of original 1x size of entire sheet
+  sheetContentHeight = 144,   -- height of original 1x size of entire sheet
 }
 
 bulletsModule.laser1Sequence = {
   name = "normal",
   start = 1,
-  count = 3,
-  time = 600,
+  count = 2,
+  time = 200,
   loopCount = 0,
 }
 

@@ -2,35 +2,27 @@
 
 {
 	"filename": "laser1_1.png",
-	"frame": {"x":0,"y":0,"w":30,"h":600},
+	"frame": {"x":0,"y":0,"w":520,"h":70},
 	"rotated": false,
 	"trimmed": false,
-	"spriteSourceSize": {"x":0,"y":0,"w":30,"h":600},
-	"sourceSize": {"w":30,"h":600}
+	"spriteSourceSize": {"x":0,"y":0,"w":520,"h":70},
+	"sourceSize": {"w":520,"h":70}
 },
 {
 	"filename": "laser1_2.png",
-	"frame": {"x":0,"y":600,"w":30,"h":600},
+	"frame": {"x":0,"y":70,"w":520,"h":74},
 	"rotated": false,
 	"trimmed": false,
-	"spriteSourceSize": {"x":0,"y":0,"w":30,"h":600},
-	"sourceSize": {"w":30,"h":600}
-},
-{
-	"filename": "laser1_3.png",
-	"frame": {"x":0,"y":1200,"w":30,"h":600},
-	"rotated": false,
-	"trimmed": false,
-	"spriteSourceSize": {"x":0,"y":0,"w":30,"h":600},
-	"sourceSize": {"w":30,"h":600}
+	"spriteSourceSize": {"x":0,"y":0,"w":520,"h":74},
+	"sourceSize": {"w":520,"h":74}
 }],
 "meta": {
 	"app": "https://www.codeandweb.com/texturepacker",
 	"version": "1.0",
 	"image": "laser1_sheet.png",
 	"format": "RGBA8888",
-	"size": {"w":30,"h":1800},
+	"size": {"w":520,"h":144},
 	"scale": "1",
-	"smartupdate": "$TexturePacker:SmartUpdate:5b21852f0ac779816fd7c122b94ca12b:310f39384db619f269b6d6d31c617ae3:24127b994e3ab5c63de8971060c6114f$"
+	"smartupdate": "$TexturePacker:SmartUpdate:95fe3243014f98b9ae9c508afd94153c:99545a9b84ac9425c6e7e68d065b84d8:24127b994e3ab5c63de8971060c6114f$"
 }
 }
