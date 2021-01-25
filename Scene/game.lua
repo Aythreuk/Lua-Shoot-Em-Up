@@ -37,7 +37,7 @@ local playerStats =
 	fireRate = 500,
 	bulletReady = true,
 	rechargeRate = 1000,
-	score = 80,
+	score = 25,
 }
 
 -- Load additional libraries
@@ -348,6 +348,12 @@ function scene:create( event ) 																									-- create()
 		self.stats.fireRate = 0
 		self.stats.particleSpeed = 0
 		self.stats.beamActive = false
+		self.tm1 = false
+		self.tm2 = false
+		self.tm3 = false
+		self.tm4 = false
+		self.tm5 = false
+		self.tm6 = false
 		-- Let's spawn on a random side
 		local randomSide = math.random( 1, 3 ) -- 1 is west, 2 is north, 3 is east
 		if (randomSide == 1) then
@@ -391,15 +397,15 @@ function scene:create( event ) 																									-- create()
 		print("Health: ", self.stats.health, "\nFire rate is: ", self.stats.fireRate,
 		"\nParticle speed is: ", self.stats.particleSpeed)
 		-- create "beam"
-		local _BEAM = nil
+		self._BEAM = nil
 		local function newBeam()
 			local obj = nil
 			local x1, y1 = self.x, self.y + self.height / 2
 
-			local function getBeamEnd ( startX ) 
+			local function getBeamEnd ( startX )
 				return math.random(startX - 1000, startX + 1000), display.contentHeight + 1000
 			end
-	
+
 			local x2, y2 = getBeamEnd(self.x)
 			obj = display.newLine( sceneGroup, x1, y1, x2, y2 )
 			obj:setStrokeColor( 1, 0, 0, 0 )
@@ -411,7 +417,7 @@ function scene:create( event ) 																									-- create()
 			obj.myName = "enemyBullet"
 			return obj
 		end
-		_BEAM = newBeam()
+		self._BEAM = newBeam()
 		-- Move function
 		local function moveEnemy( enemy )
 			local randX, randY = math.random( -100, 100 ), math.random( -100, 100 )
@@ -444,29 +450,30 @@ function scene:create( event ) 																									-- create()
 		local function stopFiring ()
 			print("Beam: standby mode")
 			self.stats.beamActive = false
-			_BEAM.strokeWidth = 4
-			_BEAM:setStrokeColor( 1, 0, 0, 0 )
-			_BEAM = newBeam()
+			self._BEAM.strokeWidth = 4
+			self._BEAM:setStrokeColor( 1, 0, 0, 0 )
+			self._BEAM = newBeam()
 		end
 		-- Attack function
 		local function enemyFire ()
 			print("Beam: fire mode")
 			self.stats.beamActive = true
-			_BEAM.strokeWidth = 10
-			_BEAM:setStrokeColor( 1, 0, 0, 1 )
-			timer.performWithDelay( 2000, stopFiring )
+			self._BEAM.strokeWidth = 10
+			self._BEAM:setStrokeColor( 1, 0, 0, 1 )
+			self.tm6 = timer.performWithDelay( 2000, stopFiring )
 		end
 		-- warn player
 		local function warnPlayer ()
 			print("Beam: warn player mode")
-			_BEAM:setStrokeColor( 1, 0, 0, 0.5 )
-			timer.performWithDelay( 2000, enemyFire )
+			self._BEAM:setStrokeColor( 1, 0, 0, 0.5 )
+			self.tm5 = timer.performWithDelay( 2000, enemyFire )
 		end
 		-- update beam position
 		local function beamUpdate ()
-			_BEAM.x = self.x
-			_BEAM.y = self.y + self.height / 2
-			
+		if self._BEAM then
+			self._BEAM.x = self.x
+			self._BEAM.y = self.y + self.height / 2
+		end
 		end
 		-- Call enemy behaviours
 		local newFireTime = 10000 - self.stats.fireRate * 100
@@ -483,6 +490,8 @@ function scene:create( event ) 																									-- create()
 		local statTotal = 0
 		return self
 	end
+
+
 
 	local instance1 = EnemyClass.newBomber()
 	local instance2 = EnemyClass.newDestroyer()
@@ -662,9 +671,14 @@ function scene:create( event ) 																									-- create()
 				display.remove( obj1 )
 				obj2.stats.health = obj2.stats.health - 1
 				if ( obj2.stats.health <= 0 ) then
-					timer.cancel(obj2.tm1)
-					timer.cancel(obj2.tm2)
-					timer.cancel(obj2.tm3)
+
+					if obj2.tm1 then timer.cancel(obj2.tm1) end
+					if obj2.tm2 then timer.cancel(obj2.tm2) end
+					if obj2.tm3 then timer.cancel(obj2.tm3) end
+					if obj2.tm4 then timer.cancel(obj2.tm4) end
+					if obj2.tm5 then timer.cancel(obj2.tm5) end
+					if obj2.tm6 then timer.cancel(obj2.tm6) end
+					display.remove(obj2._BEAM)
 					obj2:removeSelf()
 					obj2 = nil
 				end
@@ -672,9 +686,13 @@ function scene:create( event ) 																									-- create()
 				display.remove( obj2 )
 				obj1.stats.health = obj1.stats.health - 1
 				if ( obj1.stats.health <= 0 ) then
-					timer.cancel(obj1.tm1)
-					timer.cancel(obj1.tm2)
-					timer.cancel(obj1.tm3)
+					if obj1.tm1 then timer.cancel(obj1.tm1) end
+					if obj1.tm2 then timer.cancel(obj1.tm2) end
+					if obj1.tm3 then timer.cancel(obj1.tm3) end
+					if obj1.tm4 then timer.cancel(obj1.tm4) end
+					if obj1.tm5 then timer.cancel(obj1.tm5) end
+					if obj1.tm6 then timer.cancel(obj1.tm6) end
+					display.remove(obj1._BEAM)
 					obj1:removeSelf()
 					obj1 = nil
 				end
