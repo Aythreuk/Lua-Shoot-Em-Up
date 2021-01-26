@@ -17,7 +17,6 @@ local wDown, sDown, aDown, dDown, spaceDown, fireCd															-- Keyboard va
 local fireTimer
 
 
-
 -- Load additional libraries
 local math = require("math")
 local physics = require("physics")
@@ -35,6 +34,8 @@ local bullet2Sheet = graphics.newImageSheet("Images/bullet2_sheet.png",
 bulletModule.bullet2Options)
 local enemy1Sheet = graphics.newImageSheet("Images/enemy1_sheet.png",
 shipModule.enemy1Options)
+local enemy4Sheet = graphics.newImageSheet("Images/enemy4_sheet.png",
+shipModule.enemy4Options)
 local laser1Sheet = graphics.newImageSheet("Images/laser1_sheet.png",
 bulletModule.laser1Options)
 
@@ -472,11 +473,129 @@ function scene:create( event ) 																									-- create()
 	-- 	return self
 	-- end
 
+	----------------------------------------------------------------------- RUNNER
+	function EnemyClass.newRunner()
+		local self = setmetatable({}, EnemyClass)
+		self = display.newSprite ( sceneGroup, enemy4Sheet, shipModule.enemy4Sequence )
+		mainGroup:insert( self )
+		self:setSequence("normal")
+		self:play()
+		physics.addBody( self, "dynamic" )
+		self.isFixedRotation = true
+		self.myName = "enemy"
+		self.stats = {} -- Had to declare these out here for scoping
+		self.stats.particleSpeed = 0
+		self.stats.maxParticleSpeed = 40
+		self.stats.maxBullets = 10
+		self.stats.bullets = 0
+		self.stats.speed = 0
+		self.stats.maxSpeed = 40
+		self.stats.health = 1
+		-- Let's spawn on a random side
+		local randomSide = math.random( 1, 2 ) -- 1 is west, 2 is east
+		if (randomSide == 1) then
+			self.x = -50
+			self.y = math.random( -50, display.contentHeight / 2 )
+		elseif (randomSide == 2) then
+			self.x = display.contentWidth + 50
+			self.y = math.random( -50, display.contentHeight / 2 )
+		end
+		-- Assign random stats to enemy
+		local statTotal = 0
+		repeat
+			-- Make sure there is at least one point in everything
+			local rand = math.random( 1, 3 )
+			statTotal = statTotal + rand
+			if self.stats.particleSpeed == 0 then
+				self.stats.particleSpeed = rand
+			elseif self.stats.bullets == 0 then
+				self.stats.bullets = rand
+			elseif self.stats.speed == 0 then
+				self.stats.speed = rand
+			else
+				-- Randomly dish out remaining points
+				local rand2 = 0
+				local rand2 = math.random( 1, 2 )
+				if (rand2 == 1 and self.stats.bullets < self.stats.maxBullets) then
+					self.stats.bullets = self.stats.bullets + 1
+				elseif (rand2 == 2 and
+				self.stats.particleSpeed < self.stats.maxParticleSpeed - 3) then
+					self.stats.particleSpeed = self.stats.particleSpeed + rand
+				elseif (rand2 == 3 and
+				self.stats.speed < self.stats.maxSpeed - 3) then
+					self.stats.speed = self.stats.speed + rand
+				else
+					print("There has been an error")
+				end
+			end
+		until (statTotal > PlayerStats.score)
+		print("Health: ", self.stats.health, "\nBullet amount is: ", self.stats.bullets,
+		"\nParticle speed is: ", self.stats.particleSpeed)
+		-- Move function
+		self.stats.speed = 5000 - self.stats.speed * 50
+		local function moveEnemy()
+			local moveToX
+			if randomSide == 1 then
+				moveToX = math.random( display.contentWidth / 2, display.contentWidth )
+			elseif randomSide == 2 then
+				moveToX = -(math.random( display.contentWidth / 2, display.contentWidth ))
+			end
+			self.isFixedRotation = true
+			local oppVar = moveToX
+			local adjVar = -50 - self.y
+			self.rotation = -((math.atan( oppVar / adjVar )) * 180 / math.pi)
+			transition.to( self, { y= -50, x = moveToX, time=self.stats.speed,
+			onComplete = function() display.remove( self ) end} )
+		end
+		-- Attack function
+		local randX = false
+		local newParticleTime = 5000 - self.stats.particleSpeed * 50
+		local function enemyFire ()
+			local newLaser = display.newSprite( sceneGroup, bullet1Sheet,
+			bulletModule.bullet1Sequence )
+			-- Add sprite listener
+			newLaser:setSequence("normal")
+			newLaser:play()
+			physics.addBody( newLaser, "dynamic", { isSensor=true } )
+			newLaser.isBullet = true
+			newLaser.myName = "enemyBullet"
+			newLaser.x = self.x
+			newLaser.y = self.y
+			mainGroup:insert(newLaser)
+			newLaser:toBack()
+			if (randX and randomSide == 1) then
+				randX = randX + 300
+			elseif (randX and randomSide == 2) then
+				randX = randX - 300
+			end
+			if randX == false then
+				if randomSide == 1 then randX = self.x + math.random( 500, 1000 ) end
+				if randomSide == 2 then randX = self.x + -(math.random( 500, 1000 )) end
+			end
+			transition.to( newLaser, { y= display.contentHeight + 50,
+			x = randX, time=newParticleTime,
+			onComplete = function() display.remove( newLaser ) end} )
+			newLaser.isFixedRotation = true
+			local adjVar = display.contentHeight - self.y
+			local oppVar = randX - self.x
+			newLaser.rotation = -((math.atan( oppVar / adjVar )) * 180 / math.pi)
+		end
+		-- Call enemy behaviours
+		moveEnemy()
+		timer.performWithDelay( 1000, enemyFire, 3)
+		local statTotal = 0
+		return self
+	end
 
 
 	local instance1 = EnemyClass.newBomber()
 	local instance2 = Destroyer:new(mainGroup)
-	-- local instance3 = EnemyClass.newDestroyer()
+	local instance3 = Destroyer:new(mainGroup)
+	--local instance1 = EnemyClass.newBomber()
+	--local instance2 = EnemyClass.newDestroyer()
+	--local instance3 = EnemyClass.newFrigate()
+	local instance4 = EnemyClass.newRunner()
+local instance5 = EnemyClass.newRunner()
 
 	-- update health supply
 	local function updateHealth ()
