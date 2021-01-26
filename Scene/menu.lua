@@ -8,7 +8,6 @@ local widget = require( "widget" )                                              
 local composer = require( "composer" )
 
 local scene = composer.newScene()                                               -- Variables and references
-local group1 = display.newGroup()
 
 native.setProperty( "mouseCursorVisible", true )                                -- Initialization
 
