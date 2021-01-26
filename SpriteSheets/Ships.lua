@@ -93,4 +93,50 @@ shipsModule.enemy1Sequence =
   loopCount = 0,
 }
 
+shipsModule.enemy4Options =
+{
+  frames = {
+    {
+      -- frame 1
+      x = 0,
+      y = 55,
+      width = 94,
+      height = 56,
+    },
+    {
+      -- frame 2
+      x = 0,
+      y = 0,
+      width = 94,
+      height = 55,
+    },
+    {
+      -- frame 3
+      x = 94,
+      y = 0,
+      width = 94,
+      height = 55,
+    },
+    {
+      -- frame 4
+      x = 94,
+      y = 55,
+      width = 94,
+      height = 56,
+    },
+  },
+  --optional parameters; used for scaled content support
+  sheetContentWidth = 188,  -- width of original 1x size of entire sheet
+  sheetContentHeight = 111,   -- height of original 1x size of entire sheet
+}
+
+shipsModule.enemy4Sequence =
+{
+  name = "normal",
+  start = 1,
+  count = 4,
+  time = 400,
+  loopCount = 0,
+}
+
 return shipsModule
