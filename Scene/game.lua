@@ -59,7 +59,7 @@ function scene:create( event ) 																									-- create()
 	-- Code here runs when the scene is first created but has not yet appeared on screen
 
 	-- Variables and stuff  that has to be in the create scope
-	local ammoBarTable, lifeBarTable, bulletTable, enemyTable  = {}, {}, {}, {}
+	local ammoBarTable, lifeBarTable = {}, {}
 
 
 
@@ -124,11 +124,6 @@ function scene:create( event ) 																									-- create()
 	local uiBackCenter = display.newRect ( uiGroup, display.contentCenterX,
 	display.contentHeight - 50, 10, 100)
 	uiBackCenter:setFillColor ( 0, 0, 0 )
-	local bulletCatcher = display.newRect( uiGroup, display.contentCenterX,
-	display.contentHeight + 200, display.contentWidth * 2, 50)
-	bulletCatcher:setFillColor( 0, 0, 0, 1 )
-	physics.addBody( bulletCatcher, "static", { isSensor = true} )
-	bulletCatcher.myName = "bulletCatcher"
 
 	-- Health bar constructor
 	local function makeLifeBar ( x )
@@ -201,15 +196,16 @@ function scene:create( event ) 																									-- create()
 		mainGroup:insert( self )
 		self:setSequence("normal")
 		self:play()
-		table.insert( enemyTable, self )
 		physics.addBody( self, "dynamic" )
 		self.isFixedRotation = true
 		self.myName = "enemy"
 		self.stats = {} -- Had to declare these out here for scoping
 		self.stats.maxFireRate = 40
+		self.stats.maxParticleSpeed = 40
 		self.stats.maxHealth = 40
 		self.stats.health = 0
 		self.stats.fireRate = 0
+		self.stats.particleSpeed = 0
 		-- Let's spawn on a random side
 		local randomSide = math.random( 1, 3 ) -- 1 is west, 2 is north, 3 is east
 		if (randomSide == 1) then
@@ -226,20 +222,25 @@ function scene:create( event ) 																									-- create()
 		local statTotal = 0
 		repeat
 			-- Make sure there is at least one point in everything
-			local rand = math.random( 1, 2 )
+			local rand = math.random( 1, 3 )
 			statTotal = statTotal + rand
 			if self.stats.health == 0 then
 				self.stats.health = rand
 			elseif self.stats.fireRate == 0 then
 				self.stats.fireRate = rand
+			elseif self.stats.particleSpeed == 0 then
+				self.stats.particleSpeed = rand
 			else
 				-- Randomly dish out remaining points
 				local rand2 = 0
-				local rand2 = math.random( 1, 2 )
+				local rand2 = math.random( 1, 3 )
 				if (rand2 == 1 and self.stats.health < self.stats.maxHealth - 3) then
 					self.stats.health = self.stats.health + rand
 				elseif (rand2 == 2 and self.stats.fireRate < self.stats.maxFireRate - 3) then
 					self.stats.fireRate = self.stats.fireRate + rand
+				elseif (rand2 == 3 and
+				self.stats.particleSpeed < self.stats.maxParticleSpeed - 3) then
+					self.stats.particleSpeed = self.stats.particleSpeed + rand
 				else
 					print("There has been an error")
 				end
@@ -248,9 +249,9 @@ function scene:create( event ) 																									-- create()
 		print("Health: ", self.stats.health, "\nFire rate is: ", self.stats.fireRate,
 		"\nParticle speed is: ", self.stats.particleSpeed)
 		-- Move function
-		local function moveEnemy()
+		local function moveEnemy( enemy )
 			local randX, randY = math.random( -100, 100 ), math.random( -100, 100 )
-			self:setLinearVelocity( randX, randY )
+			enemy:setLinearVelocity( randX, randY )
 		end
 		-- Smooth out movement and keep on screen
 		local function enemyUpdate ( enemy )
@@ -276,31 +277,37 @@ function scene:create( event ) 																									-- create()
 			enemy:setLinearVelocity( xVel, yVel )
 		end
 		-- Attack function
-		local function enemyFire ()
+		local function enemyFire ( enemy, newParticleTime )
 			local newLaser = display.newSprite( sceneGroup, bullet1Sheet,
 			bulletModule.bullet1Sequence )
-			table.insert(bulletTable, newLaser)
 			-- Add sprite listener
 			newLaser:setSequence("normal")
 			newLaser:play()
 			physics.addBody( newLaser, "dynamic", { isSensor=true } )
-			--newLaser.isBullet = true
+			newLaser.isBullet = true
 			newLaser.myName = "enemyBullet"
-			newLaser.x = self.x
-			newLaser.y = self.y
+			newLaser.x = enemy.x
+			newLaser.y = enemy.y
 			mainGroup:insert(newLaser)
 			newLaser:toBack()
+			local randX = ((math.random( 0, 100 )) / 100) * display.contentWidth
+			print(newParticleTime)
+			transition.to( newLaser, { y= display.contentHeight + 50,
+			x = randX, time=newParticleTime,
+			onComplete = function() display.remove( newLaser ) end} )
 			newLaser.isFixedRotation = true
-			local xSpeed, ySpeed = math.random( -90, 90 ), math.random( 100, 200 )
-			newLaser:setLinearVelocity( xSpeed, ySpeed )
-			newLaser.rotation = xSpeed + 180
+			local adjVar = display.contentHeight - enemy.y
+			local oppVar = randX - enemy.x
+			newLaser.rotation = -((math.atan( oppVar / adjVar )) * 180 / math.pi)
 		end
 		-- Call enemy behaviours
 		local newFireTime = 5000 - self.stats.fireRate * 100
+		local newParticleTime = 5000 - self.stats.particleSpeed * 50
 		print(newParticleTime)
-
-		self.tm1 = timer.performWithDelay( math.random( 4000, 6000 ), moveEnemy, 0 )
-		self.tm2 = timer.performWithDelay( newFireTime, enemyFire, 0 )
+		local myClosure1 = function() return moveEnemy ( self ) end
+		self.tm1 = timer.performWithDelay( math.random( 4000, 6000 ), myClosure1, 0 )
+		local myClosure2 = function() return enemyFire ( self, newParticleTime ) end
+		self.tm2 = timer.performWithDelay( newFireTime, myClosure2, 0 )
 		local myClosure3 = function() return enemyUpdate ( self ) end
 		self.tm3 = timer.performWithDelay( 250, myClosure3, 0 )
 		local statTotal = 0
@@ -582,14 +589,13 @@ function scene:create( event ) 																									-- create()
 
 
 	local instance1 = EnemyClass.newBomber()
-	local instance2 = EnemyClass.newBomber()
-	--local instance2 = Destroyer:new(mainGroup)
-	--local instance3 = Destroyer:new(mainGroup)
+	local instance2 = Destroyer:new(mainGroup)
+	local instance3 = Destroyer:new(mainGroup)
 	--local instance1 = EnemyClass.newBomber()
 	--local instance2 = EnemyClass.newDestroyer()
 	--local instance3 = EnemyClass.newFrigate()
-	--local instance4 = EnemyClass.newRunner()
-	--local instance5 = EnemyClass.newRunner()
+	local instance4 = EnemyClass.newRunner()
+local instance5 = EnemyClass.newRunner()
 
 	-- update health supply
 	local function updateHealth ()
@@ -761,17 +767,11 @@ function scene:create( event ) 																									-- create()
 
 			local obj1 = event.object1
 			local obj2 = event.object2
-
-			if ( obj1.myName == "enemyBullet" and obj2.myName == "bulletCatcher" ) then
-				display.remove(obj1)
-			elseif ( obj1.myName == "bulletCatcher" and obj2.myName == "enemyBullet" ) then
-				display.remove(obj2)
-			end
-
 			if ( obj1.myName == "allyBullet" and obj2.myName == "enemy" ) then
 				display.remove( obj1 )
 				obj2.stats.health = obj2.stats.health - 1
 				if ( obj2.stats.health <= 0 ) then
+
 					if obj2.tm1 then timer.cancel(obj2.tm1) end
 					if obj2.tm2 then timer.cancel(obj2.tm2) end
 					if obj2.tm3 then timer.cancel(obj2.tm3) end
@@ -796,12 +796,10 @@ function scene:create( event ) 																									-- create()
 					obj1:removeSelf()
 					obj1 = nil
 				end
-
 			end
+
 		end
-
 	end
-
 
 	-- Keyboard events
 	local function onKeyEvent ( event )
@@ -848,31 +846,10 @@ function scene:create( event ) 																									-- create()
 			return false
 		end
 
-		-- update every fucking bullet on the screen, oh yeah, and ship
-		local function simulateSpeed ()
-			for k, v in pairs(bulletTable) do
-				if v then
-					local x, y = v:getLinearVelocity()
-					x = x + PlayerSpeed.xSpeed
-					y = y + PlayerSpeed.ySpeed
-					v:setLinearVelocity( x, y )
-				end
-			end
-			for k, v in pairs(enemyTable) do
-				if v then
-					local x, y = v:getLinearVelocity()
-					x = x + PlayerSpeed.xSpeed
-					y = y + PlayerSpeed.ySpeed
-					v:setLinearVelocity( x, y )
-				end
-			end
-		end
-
 		-- Update function called every frame
 		local function frameListener( event )
 			bgUpdate()
 			keyUpdate()
-			simulateSpeed()
 		end
 
 		-- Listeners
