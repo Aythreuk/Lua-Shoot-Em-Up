@@ -59,7 +59,7 @@ function scene:create( event ) 																									-- create()
 	-- Code here runs when the scene is first created but has not yet appeared on screen
 
 	-- Variables and stuff  that has to be in the create scope
-	local ammoBarTable, lifeBarTable = {}, {}
+	local ammoBarTable, lifeBarTable, enemyTable, bulletTable = {}, {}, {}, {}
 
 
 
@@ -194,6 +194,7 @@ function scene:create( event ) 																									-- create()
 		local self = setmetatable({}, EnemyClass)
 		self = display.newSprite ( sceneGroup, enemy1Sheet, shipModule.enemy1Sequence )
 		mainGroup:insert( self )
+		table.insert( enemyTable, self )
 		self:setSequence("normal")
 		self:play()
 		physics.addBody( self, "dynamic" )
@@ -280,6 +281,7 @@ function scene:create( event ) 																									-- create()
 		local function enemyFire ( enemy, newParticleTime )
 			local newLaser = display.newSprite( sceneGroup, bullet1Sheet,
 			bulletModule.bullet1Sequence )
+			table.insert( bulletTable, newLaser )
 			-- Add sprite listener
 			newLaser:setSequence("normal")
 			newLaser:play()
@@ -589,13 +591,13 @@ function scene:create( event ) 																									-- create()
 
 
 	local instance1 = EnemyClass.newBomber()
-	local instance2 = Destroyer:new(mainGroup)
-	local instance3 = Destroyer:new(mainGroup)
+	--local instance2 = Destroyer:new(mainGroup)
+	--local instance3 = Destroyer:new(mainGroup)
 	--local instance1 = EnemyClass.newBomber()
 	--local instance2 = EnemyClass.newDestroyer()
 	--local instance3 = EnemyClass.newFrigate()
 	local instance4 = EnemyClass.newRunner()
-local instance5 = EnemyClass.newRunner()
+	local instance5 = EnemyClass.newRunner()
 
 	-- update health supply
 	local function updateHealth ()
@@ -754,10 +756,10 @@ local instance5 = EnemyClass.newRunner()
 			playerSprite:setFrame(5)
 		end
 		-- Preventing a bug where PlayerSpeed went below zero
-		if (PlayerSpeed.ySpeed < 0 ) then
+		if ( PlayerSpeed.ySpeed < 0 ) then
 			PlayerSpeed.ySpeed = 0
 		end
-		playerSprite:setLinearVelocity(PlayerSpeed.xSpeed, 0)
+		playerSprite:setLinearVelocity(PlayerSpeed.xSpeed * 4, 0)
 	end
 
 
@@ -805,7 +807,6 @@ local instance5 = EnemyClass.newRunner()
 	local function onKeyEvent ( event )
 		-- Escape button (mostly for testing)
 		if (event.phase == "down" and event.keyName == "escape") then
-			print("Escape function was called")
 				native.requestExit()
 			end
 			-- W button
@@ -846,10 +847,20 @@ local instance5 = EnemyClass.newRunner()
 			return false
 		end
 
+		-- updates objects based on the player moving 'up and down'
+		local function motionUpdater ()
+			for k, v in pairs(bulletTable) do
+				if v then v.y = v.y + PlayerSpeed.ySpeed end
+				if v then v.x = v.x + PlayerSpeed.xSpeed end
+			end
+		end
+
+
 		-- Update function called every frame
 		local function frameListener( event )
 			bgUpdate()
 			keyUpdate()
+			motionUpdater()
 		end
 
 		-- Listeners
