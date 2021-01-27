@@ -23,4 +23,5 @@ PlayerStats =
 	bulletReady = true,
 	rechargeRate = 1000,
 	score = 25,
+	recovering = false,
 }
