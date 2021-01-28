@@ -379,18 +379,17 @@ function scene:create( event ) 																									-- create()
 		"\nParticle speed is: ", self.stats.particleSpeed)
 		-- create "beam"
 		self._BEAM = nil
+		self.beamAngle = nil
 		local function newBeam()
 			local obj = nil
 			local x1, y1 = self.x, self.y + self.height / 2
-
-			local function getBeamEnd ( startX )
-				return math.random(startX - 1000, startX + 1000), display.contentHeight + 1000
-			end
-
-			local x2, y2 = getBeamEnd(self.x)
-			obj = display.newLine( sceneGroup, x1, y1, x2, y2 )
-			obj:setStrokeColor( 1, 0, 0, 0 )
-			obj.strokeWidth = 4
+			-- Changed from a line to a rect based on a thread I read on Stackoverflow
+			obj = display.newRect( sceneGroup, x1, y1, 4, 2000 )
+			obj.anchorY = 0
+			self.beamAngle = math.random( -40, 40 )
+			obj.rotation = self.beamAngle
+			obj:setStrokeColor( 1, 0, 0 )
+			obj.alpha = 0
 			mainGroup:insert(obj)
 			obj:toBack()
 			physics.addBody( obj, "dynamic", { isSensor=true } )
@@ -430,24 +429,29 @@ function scene:create( event ) 																									-- create()
 		end
 		-- cease fire
 		local function stopFiring ()
-			print("Beam: standby mode")
 			self._BEAM.beamActive = false
-			self._BEAM.strokeWidth = 4
-			self._BEAM:setStrokeColor( 1, 0, 0, 0 )
+			self._BEAM.width = 4
+			self._BEAM.alpha = 0
 			self._BEAM = newBeam()
 		end
 		-- Attack function
 		local function enemyFire ()
-			print("Beam: fire mode")
 			self._BEAM.beamActive = true
-			self._BEAM.strokeWidth = 10
-			self._BEAM:setStrokeColor( 1, 0, 0, 1 )
+			self._BEAM.strokeWidth = 8
+			self._BEAM.alpha = 1
+			local opp = self._BEAM.height * math.sin(self.beamAngle)
+			local adj = self._BEAM.height * math.cos(self.beamAngle)
+
+--newLaser.rotation = -((math.atan( oppVar / adjVar )) * 180 / math.pi)
+			local a = display.newLine( self.x, self.y + self.height / 2, self.x + opp, self.y + adj )
+			a:setStrokeColor( 0, 1, 0, 1 )
+			a.strokeWidth = 2
+			--local rayResults = physics.rayCast( self.x, self.y, rectFarX, rectFarY, "unsorted" )
 			self.tm6 = timer.performWithDelay( 2000, stopFiring )
 		end
 		-- warn player
 		local function warnPlayer ()
-			print("Beam: warn player mode")
-			self._BEAM:setStrokeColor( 1, 0, 0, 0.5 )
+			self._BEAM.alpha = 0.5
 			self.tm5 = timer.performWithDelay( 2000, enemyFire )
 		end
 		-- update beam position
@@ -782,8 +786,6 @@ function scene:create( event ) 																									-- create()
 
 
 	local instance1 = EnemyClass.newDestroyer()
-local instance2 = EnemyClass.newDestroyer()
-local instance3 = EnemyClass.newDestroyer()
 
 
 	-- update health supply
