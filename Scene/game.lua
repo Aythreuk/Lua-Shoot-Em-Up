@@ -23,7 +23,9 @@ local physics = require("physics")
 local bulletModule = require("SpriteSheets.Bullets")
 local shipModule = require("SpriteSheets.Ships")
 local printTable = require("Scripts.printTable")
+
 table.print = printTable
+
 
 -- Image sheets
 local playerSheet = graphics.newImageSheet("Images/shipSpriteSheet1.png",
@@ -49,6 +51,16 @@ math.randomseed( os.time() )
 -- -----------------------------------------------------------------------------------
 -- Scene event functions
 -- -----------------------------------------------------------------------------------
+
+function WasPlayerHit(hits) 
+	if not hits or nil == '' then return false end
+	for i,v in ipairs(hits) do
+		print(v.object.myName)
+		if v.object.myName == "player" then return true end
+	end
+	return false
+end
+
 
 function scene:create( event ) 																									-- create()
 
@@ -453,15 +465,17 @@ function scene:create( event ) 																									-- create()
 			end
 			y2 = y1 + y3
 			local castResults = physics.rayCast( x1, y1, x2, y2, "unsorted" )
-			if castResults then
-				for k, v in pairs( castResults ) do
-					for k2, v2 in pairs ( v ) do
-							for k3, v3 in pairs( v2 ) do
-								print( k3, v3 )
-							end
-					end
-				end
-			end
+			-- if castResults then
+			-- 	for k, v in pairs( castResults ) do
+			-- 		for k2, v2 in pairs ( v ) do
+			-- 				for k3, v3 in pairs( v2 ) do
+			-- 					print( k3, v3 )
+			-- 				end
+			-- 		end
+			-- 	end
+			-- end
+			WasPlayerHit(castResults)
+			table.print(player)
 			self.tm6 = timer.performWithDelay( 2000, stopFiring )
 		end
 		-- warn player
