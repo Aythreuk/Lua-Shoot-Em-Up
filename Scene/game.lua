@@ -379,15 +379,20 @@ function scene:create( event ) 																									-- create()
 		"\nParticle speed is: ", self.stats.particleSpeed)
 		-- create "beam"
 		self._BEAM = nil
+		local x1, y1, x2, y2, x3, y3, beamRight
 		local function newBeam()
 			local obj = nil
-			local x1, y1 = self.x, self.y + self.height / 2
-
 			local function getBeamEnd ( startX )
 				return math.random(startX - 1000, startX + 1000), display.contentHeight + 1000
 			end
-
-			local x2, y2 = getBeamEnd(self.x)
+			x1, y1 = self.x, self.y + self.height / 2
+			x2, y2 = getBeamEnd(self.x)
+			if x1 > x2 then
+				beamRight = false
+			else
+				beamRight = true
+			end
+			x3, y3 = math.abs( x1 - x2 ), math.abs( y1 - y2 )
 			obj = display.newLine( sceneGroup, x1, y1, x2, y2 )
 			obj:setStrokeColor( 1, 0, 0, 0 )
 			obj.strokeWidth = 4
@@ -430,7 +435,6 @@ function scene:create( event ) 																									-- create()
 		end
 		-- cease fire
 		local function stopFiring ()
-			print("Beam: standby mode")
 			self._BEAM.beamActive = false
 			self._BEAM.strokeWidth = 4
 			self._BEAM:setStrokeColor( 1, 0, 0, 0 )
@@ -438,15 +442,30 @@ function scene:create( event ) 																									-- create()
 		end
 		-- Attack function
 		local function enemyFire ()
-			print("Beam: fire mode")
 			self._BEAM.beamActive = true
 			self._BEAM.strokeWidth = 10
 			self._BEAM:setStrokeColor( 1, 0, 0, 1 )
+			x1, y1 = self.x, self.y + self.height / 2
+			if beamRight then
+				x2 = x1 + x3
+			else
+				x2 = x1 - x3
+			end
+			y2 = y1 + y3
+			local castResults = physics.rayCast( x1, y1, x2, y2, "unsorted" )
+			if castResults then
+				for k, v in pairs( castResults ) do
+					for k2, v2 in pairs ( v ) do
+							for k3, v3 in pairs( v2 ) do
+								print( k3, v3 )
+							end
+					end
+				end
+			end
 			self.tm6 = timer.performWithDelay( 2000, stopFiring )
 		end
 		-- warn player
 		local function warnPlayer ()
-			print("Beam: warn player mode")
 			self._BEAM:setStrokeColor( 1, 0, 0, 0.5 )
 			self.tm5 = timer.performWithDelay( 2000, enemyFire )
 		end
@@ -782,8 +801,8 @@ function scene:create( event ) 																									-- create()
 
 
 	local instance1 = EnemyClass.newDestroyer()
-local instance2 = EnemyClass.newDestroyer()
-local instance3 = EnemyClass.newDestroyer()
+	local instance2 = EnemyClass.newDestroyer()
+	local instance3 = EnemyClass.newDestroyer()
 
 
 	-- update health supply
@@ -828,11 +847,6 @@ local instance3 = EnemyClass.newDestroyer()
 			PlayerStats.currentAmmo = PlayerStats.currentAmmo - 1
 			updateAmmo()
 		end
-	end
-
-	local function playerRecovery ()
-		playerSprite.alpha = 1
-		PlayerStats.recovering = false
 	end
 
 	local function rechargeAmmo ()
@@ -954,6 +968,20 @@ local instance3 = EnemyClass.newDestroyer()
 		playerSprite:setLinearVelocity(PlayerSpeed.xSpeed, 0)
 	end
 
+	-- player got hit
+	local function playerHit ()
+		PlayerStats.currentLife = PlayerStats.currentLife - 1
+		updateHealth()
+		playerSprite.alpha = 0.5
+		PlayerStats.recovering = true
+		timer.performWithDelay( 2000, playerRecovered )
+	end
+
+	-- player recovered
+	local function playerRecovered ()
+		playerSprite.alpha = 1
+		PlayerStats.recovering = false
+	end
 
 	-- collision event
 	local function onCollision( event )
@@ -965,21 +993,11 @@ local instance3 = EnemyClass.newDestroyer()
 			-- collisions with enemy lasers
 			if ( obj1.myName == "enemyLaser" and obj2.myName == "player" ) then
 				if (PlayerStats.recovering == false and obj1.beamActive == true ) then
-					print("Hit by laser")
-					PlayerStats.currentLife = PlayerStats.currentLife - 1
-					updateHealth()
-					PlayerStats.recovering = true
-					obj2.alpha = 0.5
-					timer.performWithDelay( 2000, playerRecovery )
+					playerHit()
 				end
 			elseif ( obj1.myName == "player" and obj2.myName == "enemyLaser" ) then
 				if (PlayerStats.recovering == false and obj2.beamActive == true) then
-					print("Hit by laser")
-					PlayerStats.currentLife = PlayerStats.currentLife - 1
-					updateHealth()
-					PlayerStats.recovering = true
-					obj1.alpha = 0.5
-					timer.performWithDelay( 2000, playerRecovery )
+					playerHit()
 				end
 			end
 
@@ -987,20 +1005,12 @@ local instance3 = EnemyClass.newDestroyer()
 			if ( obj1.myName == "enemyBullet" and obj2.myName == "player" ) then
 				if PlayerStats.recovering == false then
 					display.remove( obj1 )
-					PlayerStats.currentLife = PlayerStats.currentLife - 1
-					updateHealth()
-					PlayerStats.recovering = true
-					obj2.alpha = 0.5
-					timer.performWithDelay( 2000, playerRecovery )
+					playerHit()
 				end
 			elseif ( obj1.myName == "player" and obj2.myName == "enemyBullet" ) then
 				if PlayerStats.recovering == false then
 					display.remove( obj2 )
-					PlayerStats.currentLife = PlayerStats.currentLife - 1
-					updateHealth()
-					PlayerStats.recovering = true
-					obj1.alpha = 0.5
-					timer.performWithDelay( 2000, playerRecovery )
+					playerHit()
 				end
 			end
 
