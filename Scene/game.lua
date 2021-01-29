@@ -23,6 +23,7 @@ local physics = require("physics")
 local bulletModule = require("SpriteSheets.Bullets")
 local shipModule = require("SpriteSheets.Ships")
 local printTable = require("Scripts.printTable")
+local effectsModule = require("SpriteSheets.Effects")
 
 table.print = printTable
 
@@ -40,6 +41,8 @@ local enemy4Sheet = graphics.newImageSheet("Images/enemy4_sheet.png",
 shipModule.enemy4Options)
 local laser1Sheet = graphics.newImageSheet("Images/laser1_sheet.png",
 bulletModule.laser1Options)
+local explosion1sheet = graphics.newImageSheet("Images/explosion1_sheet.png",
+effectsModule.explosion1Options)
 
 -- Initialization
 physics.start()
@@ -52,16 +55,6 @@ math.randomseed( os.time() )
 -- Scene event functions
 -- -----------------------------------------------------------------------------------
 
-function WasPlayerHit(hits) 
-	if not hits or nil == '' then return false end
-	for i,v in ipairs(hits) do
-		print(v.object.myName)
-		if v.object.myName == "player" then return true end
-	end
-	return false
-end
-
-
 function scene:create( event ) 																									-- create()
 
 	local sceneGroup = self.view
@@ -72,8 +65,6 @@ function scene:create( event ) 																									-- create()
 
 	-- Variables and stuff  that has to be in the create scope
 	local ammoBarTable, lifeBarTable = {}, {}
-
-
 
 	-- bg constructor
 	local function createBg ()
@@ -190,6 +181,72 @@ function scene:create( event ) 																									-- create()
 	physics.addBody(playerSprite, "dynamic")
 	mainGroup:insert(playerSprite)
 	playerSprite.isFixedRotation = true
+
+
+	local function explosionEffect ( x, y )
+		local explosion = display.newSprite( sceneGroup, explosion1sheet,
+		effectsModule.explosion1Sequence )
+		explosion.alpha = 0
+		explosion.alpha = 1
+		explosion.x = x
+		explosion.y = y
+		explosion:setSequence("normal")
+		explosion:play()
+		local function explosionListener( event )
+			if ( event.phase == "ended" ) then
+				explosion:removeSelf()
+				explosion = nil
+			end
+		end
+		explosion:explosionListener( "sprite", explosionListener )
+	end
+
+
+
+	local function playerIsDefeated ()
+		explosionEffect( playerSprite.x, playerSprite.y )
+		display.remove( playerSprite )
+	end
+
+	-- update health supply
+	local function updateHealth ()
+		for i = PlayerStats.maxLife, PlayerStats.minLife + 1, -1 do
+			if (i <= PlayerStats.currentLife) then
+				lifeBarTable[i].alpha = 1
+			else
+				lifeBarTable[i].alpha = 0.25
+			end
+		end
+	end
+
+	-- player recovered
+	local function playerRecovered ()
+		playerSprite.alpha = 1
+		PlayerStats.recovering = false
+	end
+
+	-- player got hit
+	local function playerHit ()
+		PlayerStats.currentLife = PlayerStats.currentLife - 1
+		if PlayerStats.currentLife > 1 then
+			updateHealth()
+			playerSprite.alpha = 0.5
+			PlayerStats.recovering = true
+			timer.performWithDelay( 2000, playerRecovered )
+		else
+			playerIsDefeated()
+		end
+	end
+
+	-- sorting through raycast data
+	function WasPlayerHit(hits)
+		if not hits or nil == '' then return false end
+		for i,v in ipairs(hits) do
+			print(v.object.myName)
+			if v.object.myName == "player" then return true end
+		end
+		return false
+	end
 
 	-- create enemy 1
 	local EnemyClass = {}
@@ -465,23 +522,16 @@ function scene:create( event ) 																									-- create()
 			end
 			y2 = y1 + y3
 			local castResults = physics.rayCast( x1, y1, x2, y2, "unsorted" )
-			-- if castResults then
-			-- 	for k, v in pairs( castResults ) do
-			-- 		for k2, v2 in pairs ( v ) do
-			-- 				for k3, v3 in pairs( v2 ) do
-			-- 					print( k3, v3 )
-			-- 				end
-			-- 		end
-			-- 	end
-			-- end
-			WasPlayerHit(castResults)
-			table.print(player)
-			self.tm6 = timer.performWithDelay( 2000, stopFiring )
+			local a = WasPlayerHit(castResults)
+			if a == true then
+				playerHit()
+			end
+			self.tm6 = timer.performWithDelay( 1500, stopFiring )
 		end
 		-- warn player
 		local function warnPlayer ()
 			self._BEAM:setStrokeColor( 1, 0, 0, 0.5 )
-			self.tm5 = timer.performWithDelay( 2000, enemyFire )
+			self.tm5 = timer.performWithDelay( 1500, enemyFire )
 		end
 		-- update beam position
 		local function beamUpdate ()
@@ -815,20 +865,10 @@ function scene:create( event ) 																									-- create()
 
 
 	local instance1 = EnemyClass.newDestroyer()
-	local instance2 = EnemyClass.newDestroyer()
-	local instance3 = EnemyClass.newDestroyer()
-
-
-	-- update health supply
-	local function updateHealth ()
-		for i = PlayerStats.maxLife, PlayerStats.minLife + 1, -1 do
-			if (i <= PlayerStats.currentLife) then
-				lifeBarTable[i].alpha = 1
-			else
-				lifeBarTable[i].alpha = 0.25
-			end
-		end
-	end
+	local instance2 = EnemyClass.newBomber()
+	local instance3 = EnemyClass.newBomber()
+	local instance4 = EnemyClass.newBomber()
+	local instance5 = EnemyClass.newBomber()
 
 	-- update ammo supply
 	local function updateAmmo ()
@@ -926,75 +966,64 @@ function scene:create( event ) 																									-- create()
 		bg5:translate( -(PlayerSpeed.xSpeed / 20), PlayerSpeed.ySpeed / 5)
 		bg6:translate( -(PlayerSpeed.xSpeed / 20), PlayerSpeed.ySpeed / 5)
 		-- trigger boundaries
-		if (playerSprite.x < 250) then
-			boundaryLeft.alpha = 0.75
-		elseif (playerSprite.x > display.contentWidth - 250) then
-			boundaryRight.alpha = 0.75
-		else
-			boundaryLeft.alpha = 0
-			boundaryRight.alpha = 0
+		if ( playerSprite.x ) then
+			if (playerSprite.x < 250) then
+				boundaryLeft.alpha = 0.75
+			elseif (playerSprite.x > display.contentWidth - 250) then
+				boundaryRight.alpha = 0.75
+			else
+				boundaryLeft.alpha = 0
+				boundaryRight.alpha = 0
+			end
 		end
 	end
 
 	local function keyUpdate ()																										-- WASD function
-		if (PlayerSpeed.xSpeed < 0 and not aDown and not dDown) then								-- Automatically slow down
-			PlayerSpeed.xSpeed = PlayerSpeed.xSpeed + PlayerSpeed.xIncrement / 2
-		elseif (PlayerSpeed.xSpeed > 0 and not aDown and not dDown) then
-			PlayerSpeed.xSpeed = PlayerSpeed.xSpeed - PlayerSpeed.xIncrement / 2
-		end
-		if (PlayerSpeed.ySpeed > 0 and not wDown and not sDown) then
-			PlayerSpeed.ySpeed = PlayerSpeed.ySpeed - PlayerSpeed.yIncrement / 4
-		end
-		if (wDown and PlayerSpeed.ySpeed < PlayerSpeed.yMax) then 									-- W key down
-			PlayerSpeed.ySpeed = PlayerSpeed.ySpeed + PlayerSpeed.yIncrement
-		end
-		if (sDown and PlayerSpeed.ySpeed > PlayerSpeed.yMin) then 									-- S key down
-			PlayerSpeed.ySpeed = PlayerSpeed.ySpeed - PlayerSpeed.yIncrement
-		end
-		if (aDown and PlayerSpeed.xSpeed > PlayerSpeed.xMin) then										-- A key down
-			PlayerSpeed.xSpeed = PlayerSpeed.xSpeed - PlayerSpeed.xIncrement
-		end
-		if (dDown and PlayerSpeed.xSpeed < PlayerSpeed.xMax) then										-- D key down
-			PlayerSpeed.xSpeed = PlayerSpeed.xSpeed + PlayerSpeed.xIncrement
-		end
-		if (spaceDown and PlayerStats.currentAmmo > 0) then
-			fireMain()
-			if not fireTimer then
-				fireTimer = timer.performWithDelay ( PlayerStats.fireRate, playerFireTimer )
+		if playerSprite.x then
+			if (PlayerSpeed.xSpeed < 0 and not aDown and not dDown) then								-- Automatically slow down
+				PlayerSpeed.xSpeed = PlayerSpeed.xSpeed + PlayerSpeed.xIncrement / 2
+			elseif (PlayerSpeed.xSpeed > 0 and not aDown and not dDown) then
+				PlayerSpeed.xSpeed = PlayerSpeed.xSpeed - PlayerSpeed.xIncrement / 2
 			end
+			if (PlayerSpeed.ySpeed > 0 and not wDown and not sDown) then
+				PlayerSpeed.ySpeed = PlayerSpeed.ySpeed - PlayerSpeed.yIncrement / 4
+			end
+			if (wDown and PlayerSpeed.ySpeed < PlayerSpeed.yMax) then 									-- W key down
+				PlayerSpeed.ySpeed = PlayerSpeed.ySpeed + PlayerSpeed.yIncrement
+			end
+			if (sDown and PlayerSpeed.ySpeed > PlayerSpeed.yMin) then 									-- S key down
+				PlayerSpeed.ySpeed = PlayerSpeed.ySpeed - PlayerSpeed.yIncrement
+			end
+			if (aDown and PlayerSpeed.xSpeed > PlayerSpeed.xMin) then										-- A key down
+				PlayerSpeed.xSpeed = PlayerSpeed.xSpeed - PlayerSpeed.xIncrement
+			end
+			if (dDown and PlayerSpeed.xSpeed < PlayerSpeed.xMax) then										-- D key down
+				PlayerSpeed.xSpeed = PlayerSpeed.xSpeed + PlayerSpeed.xIncrement
+			end
+			if (spaceDown and PlayerStats.currentAmmo > 0) then
+				fireMain()
+				if not fireTimer then
+					fireTimer = timer.performWithDelay ( PlayerStats.fireRate, playerFireTimer )
+				end
+			end
+			-- play animations
+			if (PlayerSpeed.xSpeed == 0) then
+				playerSprite:setFrame(1)
+			elseif (PlayerSpeed.xSpeed < 0 and PlayerSpeed.xSpeed > (PlayerSpeed.xMin / 2)) then
+				playerSprite:setFrame(2)
+			elseif (PlayerSpeed.xSpeed < (PlayerSpeed.xMin / 2)) then
+				playerSprite:setFrame(3)
+			elseif (PlayerSpeed.xSpeed > 0 and PlayerSpeed.xSpeed < (PlayerSpeed.xMax / 2)) then
+				playerSprite:setFrame(4)
+			elseif (PlayerSpeed.xSpeed > (PlayerSpeed.xMax / 2)) then
+				playerSprite:setFrame(5)
+			end
+			-- Preventing a bug where PlayerSpeed went below zero
+			if (PlayerSpeed.ySpeed < 0 ) then
+				PlayerSpeed.ySpeed = 0
+			end
+			playerSprite:setLinearVelocity(PlayerSpeed.xSpeed, 0)
 		end
-		-- play animations
-		if (PlayerSpeed.xSpeed == 0) then
-			playerSprite:setFrame(1)
-		elseif (PlayerSpeed.xSpeed < 0 and PlayerSpeed.xSpeed > (PlayerSpeed.xMin / 2)) then
-			playerSprite:setFrame(2)
-		elseif (PlayerSpeed.xSpeed < (PlayerSpeed.xMin / 2)) then
-			playerSprite:setFrame(3)
-		elseif (PlayerSpeed.xSpeed > 0 and PlayerSpeed.xSpeed < (PlayerSpeed.xMax / 2)) then
-			playerSprite:setFrame(4)
-		elseif (PlayerSpeed.xSpeed > (PlayerSpeed.xMax / 2)) then
-			playerSprite:setFrame(5)
-		end
-		-- Preventing a bug where PlayerSpeed went below zero
-		if (PlayerSpeed.ySpeed < 0 ) then
-			PlayerSpeed.ySpeed = 0
-		end
-		playerSprite:setLinearVelocity(PlayerSpeed.xSpeed, 0)
-	end
-
-	-- player got hit
-	local function playerHit ()
-		PlayerStats.currentLife = PlayerStats.currentLife - 1
-		updateHealth()
-		playerSprite.alpha = 0.5
-		PlayerStats.recovering = true
-		timer.performWithDelay( 2000, playerRecovered )
-	end
-
-	-- player recovered
-	local function playerRecovered ()
-		playerSprite.alpha = 1
-		PlayerStats.recovering = false
 	end
 
 	-- collision event
@@ -1040,6 +1069,7 @@ function scene:create( event ) 																									-- create()
 					if obj2.tm4 then timer.cancel(obj2.tm4) end
 					if obj2.tm5 then timer.cancel(obj2.tm5) end
 					if obj2.tm6 then timer.cancel(obj2.tm6) end
+					explosionEffect( obj2.x, obj2.y )
 					display.remove(obj2._BEAM)
 					obj2:removeSelf()
 					obj2 = nil
@@ -1054,6 +1084,7 @@ function scene:create( event ) 																									-- create()
 					if obj1.tm4 then timer.cancel(obj1.tm4) end
 					if obj1.tm5 then timer.cancel(obj1.tm5) end
 					if obj1.tm6 then timer.cancel(obj1.tm6) end
+					explosionEffect( obj1.x, obj1.y )
 					display.remove(obj1._BEAM)
 					obj1:removeSelf()
 					obj1 = nil

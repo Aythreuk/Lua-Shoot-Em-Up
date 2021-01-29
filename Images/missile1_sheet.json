@@ -1,0 +1,44 @@
+{"frames": [
+
+{
+	"filename": "missile1_1.png",
+	"frame": {"x":0,"y":0,"w":9,"h":29},
+	"rotated": false,
+	"trimmed": false,
+	"spriteSourceSize": {"x":0,"y":0,"w":9,"h":29},
+	"sourceSize": {"w":9,"h":29}
+},
+{
+	"filename": "missile1_2.png",
+	"frame": {"x":0,"y":29,"w":9,"h":26},
+	"rotated": false,
+	"trimmed": false,
+	"spriteSourceSize": {"x":0,"y":0,"w":9,"h":26},
+	"sourceSize": {"w":9,"h":26}
+},
+{
+	"filename": "missile1_3.png",
+	"frame": {"x":0,"y":55,"w":9,"h":28},
+	"rotated": false,
+	"trimmed": false,
+	"spriteSourceSize": {"x":0,"y":0,"w":9,"h":28},
+	"sourceSize": {"w":9,"h":28}
+},
+{
+	"filename": "missile1_4.png",
+	"frame": {"x":0,"y":83,"w":9,"h":29},
+	"rotated": false,
+	"trimmed": false,
+	"spriteSourceSize": {"x":0,"y":0,"w":9,"h":29},
+	"sourceSize": {"w":9,"h":29}
+}],
+"meta": {
+	"app": "https://www.codeandweb.com/texturepacker",
+	"version": "1.0",
+	"image": "missile1_sheet.png",
+	"format": "RGBA8888",
+	"size": {"w":9,"h":112},
+	"scale": "1",
+	"smartupdate": "$TexturePacker:SmartUpdate:3c68bcb0f1c713e9679741b438c21d57:b9e55b38666a4049cb428777b39046fd:243f9106a6b3edaa0d7cb128797bfbbc$"
+}
+}

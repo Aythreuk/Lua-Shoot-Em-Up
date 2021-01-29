@@ -1,0 +1,44 @@
+{"frames": [
+
+{
+	"filename": "ship5_1.png",
+	"frame": {"x":0,"y":0,"w":40,"h":57},
+	"rotated": false,
+	"trimmed": false,
+	"spriteSourceSize": {"x":0,"y":0,"w":40,"h":57},
+	"sourceSize": {"w":40,"h":57}
+},
+{
+	"filename": "ship5_2.png",
+	"frame": {"x":40,"y":0,"w":40,"h":57},
+	"rotated": false,
+	"trimmed": false,
+	"spriteSourceSize": {"x":0,"y":0,"w":40,"h":57},
+	"sourceSize": {"w":40,"h":57}
+},
+{
+	"filename": "ship5_3.png",
+	"frame": {"x":80,"y":0,"w":40,"h":57},
+	"rotated": false,
+	"trimmed": false,
+	"spriteSourceSize": {"x":0,"y":0,"w":40,"h":57},
+	"sourceSize": {"w":40,"h":57}
+},
+{
+	"filename": "ship5_4.png",
+	"frame": {"x":120,"y":0,"w":40,"h":57},
+	"rotated": false,
+	"trimmed": false,
+	"spriteSourceSize": {"x":0,"y":0,"w":40,"h":57},
+	"sourceSize": {"w":40,"h":57}
+}],
+"meta": {
+	"app": "https://www.codeandweb.com/texturepacker",
+	"version": "1.0",
+	"image": "enemy5_sheet.png",
+	"format": "RGBA8888",
+	"size": {"w":160,"h":57},
+	"scale": "1",
+	"smartupdate": "$TexturePacker:SmartUpdate:638811f35c962435084f0c8ddc504ff3:ce1ca9de8ed87f11a407b7d43b2e69bf:f3c1f2c93c2648f7dfda262ba61f1d7f$"
+}
+}
