@@ -72,7 +72,7 @@ effectsModule.explosion1Sequence = {
     name = "normal",
     start = 1,
     count = 8,
-    time = 2000,
+    time = 1000,
     loopCount = 1
   }
 }
