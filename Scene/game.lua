@@ -35,6 +35,8 @@ local bullet1Sheet = graphics.newImageSheet("Images/bullet1_sheet.png",
 bulletModule.bullet1Options)
 local bullet2Sheet = graphics.newImageSheet("Images/bullet2_sheet.png",
 bulletModule.bullet2Options)
+local missile1Sheet = graphics.newImageSheet("Images/missile1_sheet.png",
+bulletModule.missile1Options)
 local enemy1Sheet = graphics.newImageSheet("Images/enemy1_sheet.png",
 shipModule.enemy1Options)
 local enemy4Sheet = graphics.newImageSheet("Images/enemy4_sheet.png",
@@ -121,14 +123,27 @@ function scene:create( event ) 																									-- create()
 	local boundaryRight = makeBoundaries( display.contentWidth - 40 )
 
 	-- Player UI
+	-- health and ammo back
 	local uiBack = display.newRect( uiGroup, display.contentCenterX,
 	display.contentHeight - 50, display.contentWidth, 100 )
 	uiBack:setFillColor( 0.3, 0.3, 0.3 )
 	uiBack.strokeWidth = 10
 	uiBack:setStrokeColor ( 0, 0, 0 )
+	-- score back
+	local uiback2Vertices = { 200, -25, 150, 25, -150, 25, -200, -25 }
+	local uiBack2 = display.newPolygon( uiGroup, display.contentCenterX, 25,
+	uiback2Vertices )
+	uiBack2:setFillColor( 0.3, 0.3, 0.3 )
+	uiBack2.strokeWidth = 5
+	uiBack2:setStrokeColor ( 0, 0, 0 )
+	-- seperator between ammo and health
 	local uiBackCenter = display.newRect ( uiGroup, display.contentCenterX,
 	display.contentHeight - 50, 10, 100)
 	uiBackCenter:setFillColor ( 0, 0, 0 )
+	-- score text
+	local uiScoreText = display.newText( uiGroup, "0000000", display.contentCenterX,
+	25, "Fonts/Black_Ops_One/BlackOpsOne-Regular.ttf", 36 )
+	uiScoreText:setFillColor( 0, 0, 0 )
 
 	-- Health bar constructor
 	local function makeLifeBar ( x )
@@ -773,6 +788,8 @@ function scene:create( event ) 																									-- create()
 		self.stats.health = 0
 		self.stats.fireRate = 0
 		self.stats.particleSpeed = 0
+		self.stats.curveStrength = math.random( 1, 3 )
+		self.stats.tm4 = false
 		-- Let's spawn on a random side
 		local randomSide = math.random( 1, 3 ) -- 1 is west, 2 is north, 3 is east
 		if (randomSide == 1) then
@@ -845,8 +862,8 @@ function scene:create( event ) 																									-- create()
 		end
 		-- Attack function
 		local function enemyFire ( enemy, newParticleTime )
-			local newLaser = display.newSprite( sceneGroup, bullet1Sheet,
-			bulletModule.bullet1Sequence )
+			local newLaser = display.newSprite( sceneGroup, missile1Sheet,
+			bulletModule.missile1Sequence )
 			-- Add sprite listener
 			newLaser:setSequence("normal")
 			newLaser:play()
@@ -857,16 +874,18 @@ function scene:create( event ) 																									-- create()
 			newLaser.y = enemy.y
 			mainGroup:insert(newLaser)
 			newLaser:toBack()
-			local randX = ((math.random( 0, 100 )) / 100) * display.contentWidth
-			print(newParticleTime)
-			transition.to( newLaser, { y= display.contentHeight + 50,
-			x = randX, time=newParticleTime,
-			onComplete = function() display.remove( newLaser ) end} )
-			newLaser.isFixedRotation = true
-			local adjVar = display.contentHeight - enemy.y
-			local oppVar = randX - enemy.x
-			newLaser.rotation = -((math.atan( oppVar / adjVar )) * 180 / math.pi)
+			local xVel, yVel = math.random( -100, 100 ), math.random( 50, 100 )
+			print( xVel, yVel )
+			newLaser:setLinearVelocity( xVel, yVel )
+			-- curve function
+			local function curveMissile ( missile )
+				local x, y = missile:getLinearVelocity()
+				if x > 0 then x = x - self.stats.curveStrength end
+				if x < 0 then x = x + self.stats.curveStrength end
+				missile:setLinearVelocity( x, y )
+			end
 		end
+
 		-- Call enemy behaviours
 		local newFireTime = 5000 - self.stats.fireRate * 100
 		local newParticleTime = 5000 - self.stats.particleSpeed * 50
@@ -877,6 +896,7 @@ function scene:create( event ) 																									-- create()
 		self.tm2 = timer.performWithDelay( newFireTime, myClosure2, 0 )
 		local myClosure3 = function() return enemyUpdate ( self ) end
 		self.tm3 = timer.performWithDelay( 250, myClosure3, 0 )
+
 		local statTotal = 0
 		return self
 	end
@@ -995,11 +1015,8 @@ function scene:create( event ) 																									-- create()
 		return self
 	end
 
-	local instance1 = EnemyClass.newDestroyer()
-	local instance2 = EnemyClass.newDestroyer()
-	local instance3 = EnemyClass.newDestroyer()
-	local instance4 = EnemyClass.newRunner()
-	local instance5 = EnemyClass.newLauncher()
+	local instance1 = EnemyClass.newLauncher()
+	local instance2 = EnemyClass.newLauncher()
 
 	-- update ammo supply
 	local function updateAmmo ()

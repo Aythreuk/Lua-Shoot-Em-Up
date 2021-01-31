@@ -146,4 +146,49 @@ bulletsModule.laser1Sequence = {
   loopCount = 0,
 }
 
+bulletsModule.missile1Options =
+{
+  frames = {
+    {
+      --frame1
+      x = 0,
+      y = 0,
+      width = 9,
+      height = 29,
+    },
+    {
+      --frame2
+      x = 0,
+      y = 29,
+      width = 9,
+      height = 26,
+    },
+    {
+      --frame3
+      x = 0,
+      y = 55,
+      width = 9,
+      height = 28,
+    },
+    {
+      --frame4
+      x = 0,
+      y = 83,
+      width = 9,
+      height = 29,
+    },
+  },
+  --optional parameters; used for scaled content support
+  sheetContentWidth = 9,  -- width of original 1x size of entire sheet
+  sheetContentHeight = 112,   -- height of original 1x size of entire sheet
+}
+
+bulletsModule.missile1Sequence = {
+  name = "normal",
+  start = 1,
+  count = 4,
+  time = 400,
+  loopCount = 0,
+}
+
 return bulletsModule
