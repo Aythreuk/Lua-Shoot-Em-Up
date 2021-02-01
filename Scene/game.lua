@@ -1,4 +1,5 @@
 local composer = require( "composer" )
+local Destroyer = require('Enemies.Destroyer')
 local scene = composer.newScene()
 
 -- -----------------------------------------------------------------------------------
@@ -23,10 +24,6 @@ local bulletModule = require("SpriteSheets.Bullets")
 local shipModule = require("SpriteSheets.Ships")
 local printTable = require("Scripts.printTable")
 local effectsModule = require("SpriteSheets.Effects")
-local globalModule = require('globals')
-
--- Load enemy modules
-local bomberModule = require("Enemies.Bomber")
 
 table.print = printTable
 
@@ -266,8 +263,6 @@ function scene:create( event ) 																									-- create()
 		return false
 	end
 
-
-
 	-- create enemy 1
 	local EnemyClass = {}
 	EnemyClass.__index = EnemyClass
@@ -278,7 +273,6 @@ function scene:create( event ) 																									-- create()
 		end,
 	})
 
---[[
 	----------------------------------------------------------------------- BOMBER
 	function EnemyClass.newBomber()
 		local self = setmetatable({}, EnemyClass)
@@ -403,7 +397,6 @@ function scene:create( event ) 																									-- create()
 		local statTotal = 0
 		return self
 	end
-	--]]
 
 	-- -------------------------------------------------------------------- DESTROYER
 	function EnemyClass.newDestroyer()
@@ -584,7 +577,6 @@ function scene:create( event ) 																									-- create()
 		local statTotal = 0
 		return self
 	end
-
 
 	---------------------------------------------------------------------- FRIGATE
 	function EnemyClass.newFrigate()
@@ -1023,7 +1015,8 @@ function scene:create( event ) 																									-- create()
 		return self
 	end
 
-	local instance1 = bomberModule.BomberClass.newBomber()
+	local instance1 = EnemyClass.newLauncher()
+	local instance2 = EnemyClass.newLauncher()
 
 	-- update ammo supply
 	local function updateAmmo ()
