@@ -41,8 +41,6 @@ local enemy1Sheet = graphics.newImageSheet("Images/enemy1_sheet.png",
 shipModule.enemy1Options)
 local enemy4Sheet = graphics.newImageSheet("Images/enemy4_sheet.png",
 shipModule.enemy4Options)
-local laser1Sheet = graphics.newImageSheet("Images/laser1_sheet.png",
-bulletModule.laser1Options)
 local explosion1sheet = graphics.newImageSheet("Images/explosion1_sheet.png",
 effectsModule.explosion1Options)
 local enemy5Sheet = graphics.newImageSheet("Images/enemy5_sheet.png",
@@ -277,6 +275,11 @@ function scene:create( event ) 																									-- create()
 			return cls.newBomber(...)
 		end,
 	})
+
+	function EnemyClass.safeDestroy ( enemy )
+		enemyCount = enemyCount + 1
+		enemy:removeSelf()
+	end
 
 	----------------------------------------------------------------------- BOMBER
 	function EnemyClass.newBomber()
@@ -805,6 +808,7 @@ function scene:create( event ) 																									-- create()
 		self.stats.speed = 0
 		self.stats.maxSpeed = 40
 		self.stats.health = 1
+		self.destroyed = false
 		self.worth =  PlayerStats.score / 10
 		if self.worth < 3 then self.worth = 3 end
 		-- Let's spawn on a random side
@@ -862,9 +866,10 @@ function scene:create( event ) 																									-- create()
 			self.rotation = -((math.atan( oppVar / adjVar )) * 180 / math.pi)
 			transition.to( self, { y= -50, x = moveToX, time=self.stats.speed,
 			onComplete = function()
-			display.remove( self )
-			self = nil
-			enemyCount = enemyCount - 1
+				if not self.destroyed then
+					enemyCount = enemyCount - 1
+					self:removeSelf()
+				end
 			end} )
 		end
 		-- Attack function
@@ -909,355 +914,391 @@ function scene:create( event ) 																									-- create()
 		return self
 	end
 
-	--
-	local function spawnEnemies ()
-		local pickShip = 3
-		if pickShip == 1 then local instance1 = EnemyClass.newBomber() end
-		if pickShip == 2 then local instance1 = EnemyClass.newDestroyer() end
-		if pickShip == 3 then local instance1 = EnemyClass.newRunner() end
-	end
-	local gameTimer = timer.performWithDelay( 5000, spawnEnemies, 0 )
-
-	-- update ammo supply
-	local function updateAmmo ()
-		for i = PlayerStats.maxAmmo, PlayerStats.minAmmo + 1, -1 do
-			if (i <= PlayerStats.currentAmmo) then
-				ammoBarTable[i].alpha = 1
+	local function spawnEnemies ( randShip, amountofEnemies )
+		for i = 1, amountofEnemies do
+			local rngNum = math.random( 1, randShip )
+			if rngNum == 1 then
+				EnemyClass.newBomber()
+			elseif rngNum == 2 then
+				EnemyClass.newRunner()
+			elseif rngNum == 3 then
+				EnemyClass.newDestroyer()
+			elseif rngNum == 4 then
+				EnemyClass.newFrigate()
 			else
-				ammoBarTable[i].alpha = 0.25
+				print("An error has occured")
 			end
 		end
 	end
 
-	local function fireMain() 																		-- Fire main weapons
-		if PlayerStats.bulletReady then
-			local newLaser = display.newSprite( sceneGroup, bullet2Sheet,
-			bulletModule.bullet2Sequence )
-			-- Add sprite listener
-			newLaser:setSequence("normal")
-			newLaser:play()
-			physics.addBody( newLaser, "dynamic", { isSensor=true } )
-			newLaser.isBullet = true
-			newLaser.myName = "allyBullet"
-			newLaser.x = playerSprite.x
-			newLaser.y = playerSprite.y
-			mainGroup:insert(newLaser)
-			newLaser:toBack()
-			transition.to( newLaser, { y=-40, time=500,
-			onComplete = function() display.remove( newLaser ) end} )
-			PlayerStats.bulletReady = false
-			PlayerStats.currentAmmo = PlayerStats.currentAmmo - 1
+	--
+	local function gameLoop ()
+		if enemyCount <= 0 then
+			if PlayerStats.score <= 30 then
+				EnemyClass.newBomber() -- no need to even call the function
+				elseif PlayerStats.score > 30 and PlayerStats.score <= 100 then
+					spawnEnemies( 2, 2 ) -- possible ships to spawn, amount of ships
+				elseif PlayerStats.score > 100 and PlayerStats.score <= 200 then
+					spawnEnemies( 3, 2 )
+				elseif PlayerStats.score > 200 and PlayerStats.score <= 300 then
+					spawnEnemies( 3, 3 )
+				elseif PlayerStats.score > 300 and PlayerStats.score <= 500 then
+					spawnEnemies( 4, 3 )
+				elseif PlayerStats.score > 500 and PlayerStats.score <= 700 then
+					spawnEnemies( 4, 4 )
+				elseif PlayerStats.score > 700 and PlayerStats.score <= 1000 then
+					spawnEnemies( 4, 5 )
+				elseif PlayerStats.score > 1000 then
+					spawnEnemies( 4, 6 )
+				end
+			end
+		end
+		local gameTimer = timer.performWithDelay( 6000, gameLoop, 0 )
+
+
+
+		-- update ammo supply
+		local function updateAmmo ()
+			for i = PlayerStats.maxAmmo, PlayerStats.minAmmo + 1, -1 do
+				if (i <= PlayerStats.currentAmmo) then
+					ammoBarTable[i].alpha = 1
+				else
+					ammoBarTable[i].alpha = 0.25
+				end
+			end
+		end
+
+		local function fireMain() 																		-- Fire main weapons
+			if PlayerStats.bulletReady then
+				local newLaser = display.newSprite( sceneGroup, bullet2Sheet,
+				bulletModule.bullet2Sequence )
+				-- Add sprite listener
+				newLaser:setSequence("normal")
+				newLaser:play()
+				physics.addBody( newLaser, "dynamic", { isSensor=true } )
+				newLaser.isBullet = true
+				newLaser.myName = "allyBullet"
+				newLaser.x = playerSprite.x
+				newLaser.y = playerSprite.y
+				mainGroup:insert(newLaser)
+				newLaser:toBack()
+				transition.to( newLaser, { y=-40, time=500,
+				onComplete = function() display.remove( newLaser ) end} )
+				PlayerStats.bulletReady = false
+				PlayerStats.currentAmmo = PlayerStats.currentAmmo - 1
+				updateAmmo()
+			end
+		end
+
+		local function rechargeAmmo ()
+			if (PlayerStats.currentAmmo < PlayerStats.maxAmmo) then
+				PlayerStats.currentAmmo = PlayerStats.currentAmmo + 1
+			end
 			updateAmmo()
 		end
-	end
+		timer.performWithDelay( PlayerStats.rechargeRate, rechargeAmmo, 0 )
 
-	local function rechargeAmmo ()
-		if (PlayerStats.currentAmmo < PlayerStats.maxAmmo) then
-			PlayerStats.currentAmmo = PlayerStats.currentAmmo + 1
-		end
-		updateAmmo()
-	end
-	timer.performWithDelay( PlayerStats.rechargeRate, rechargeAmmo, 0 )
-
-	local function playerFireTimer ()
-		PlayerStats.bulletReady = true
-		fireTimer = nil
-		print("Refreshed the bullet")
-	end
-
-	-- adjust global speeds
-	local function bgUpdate ()
-		-- Backgrounds leave the screen southbound (north bound not possible)
-		-- 6 2 4
-		-- 5 1 3
-		if (bg1.y > display.contentHeight * 2) then -- if bg1 leaves the screen on the
-			bg1.y = bg2.y - bg2.height						-- y axis, it moves up and takes it's
-			bg3.y = bg4.y - bg4.height						-- comrades with it
-			bg5.y = bg6.y - bg6.height
-		end
-		if (bg2.y > display.contentHeight * 2) then	-- same thing, next row
-			bg2.y = bg1.y - bg1.height
-			bg4.y = bg3.y - bg3.height
-			bg6.y = bg5.y - bg5.height
+		local function playerFireTimer ()
+			PlayerStats.bulletReady = true
+			fireTimer = nil
+			print("Refreshed the bullet")
 		end
 
-		-- yikes, this part is more complicated. Here we go boys.
-		if (bg1.x > display.contentWidth * 2) then
-			bg1.x = bg3.x - bg3.width
-			bg2.x = bg4.x - bg4.width
-		end
-		if (bg3.x > display.contentWidth * 2) then
-			bg3.x = bg5.x - bg5.width
-			bg4.x = bg6.x - bg6.width
-		end
-		if (bg5.x > display.contentWidth * 2) then
-			bg5.x = bg1.x - bg1.width
-			bg6.x = bg2.x - bg2.width
-		end
-
-		if (bg1.x < -(display.contentWidth * 2)) then
-			bg1.x = bg3.x + bg3.width
-			bg2.x = bg4.x + bg4.width
-		end
-		if (bg3.x < -(display.contentWidth * 2)) then
-			bg3.x = bg5.x + bg5.width
-			bg4.x = bg6.x + bg6.width
-		end
-		if (bg5.x < -(display.contentWidth * 2)) then
-			bg5.x = bg1.x + bg1.width
-			bg6.x = bg2.x + bg2.width
-		end
-		bg1:translate( -(PlayerSpeed.xSpeed / 20), PlayerSpeed.ySpeed / 5)
-		bg2:translate( -(PlayerSpeed.xSpeed / 20), PlayerSpeed.ySpeed / 5)
-		bg3:translate( -(PlayerSpeed.xSpeed / 20), PlayerSpeed.ySpeed / 5)
-		bg4:translate( -(PlayerSpeed.xSpeed / 20), PlayerSpeed.ySpeed / 5)
-		bg5:translate( -(PlayerSpeed.xSpeed / 20), PlayerSpeed.ySpeed / 5)
-		bg6:translate( -(PlayerSpeed.xSpeed / 20), PlayerSpeed.ySpeed / 5)
-		-- auto slow down moved to here so it slows down when you die and no longer
-		-- have controls
-		if (PlayerSpeed.xSpeed < 0 and not aDown and not dDown) then
-			PlayerSpeed.xSpeed = PlayerSpeed.xSpeed + PlayerSpeed.xIncrement / 2
-		elseif (PlayerSpeed.xSpeed > 0 and not aDown and not dDown) then
-			PlayerSpeed.xSpeed = PlayerSpeed.xSpeed - PlayerSpeed.xIncrement / 2
-		end
-		if (PlayerSpeed.ySpeed > 0 and not wDown and not sDown) then
-			PlayerSpeed.ySpeed = PlayerSpeed.ySpeed - PlayerSpeed.yIncrement / 4
-		end
-		-- trigger boundaries
-		if ( playerSprite.x ) then
-			if (playerSprite.x < 250) then
-				boundaryLeft.alpha = 0.75
-			elseif (playerSprite.x > display.contentWidth - 250) then
-				boundaryRight.alpha = 0.75
-			else
-				boundaryLeft.alpha = 0
-				boundaryRight.alpha = 0
+		-- adjust global speeds
+		local function bgUpdate ()
+			-- Backgrounds leave the screen southbound (north bound not possible)
+			-- 6 2 4
+			-- 5 1 3
+			if (bg1.y > display.contentHeight * 2) then -- if bg1 leaves the screen on the
+				bg1.y = bg2.y - bg2.height						-- y axis, it moves up and takes it's
+				bg3.y = bg4.y - bg4.height						-- comrades with it
+				bg5.y = bg6.y - bg6.height
 			end
-		end
-	end
+			if (bg2.y > display.contentHeight * 2) then	-- same thing, next row
+				bg2.y = bg1.y - bg1.height
+				bg4.y = bg3.y - bg3.height
+				bg6.y = bg5.y - bg5.height
+			end
 
-	local function keyUpdate ()																										-- WASD function
-		if playerSprite.x then
-			if (wDown and PlayerSpeed.ySpeed < PlayerSpeed.yMax) then 									-- W key down
-				PlayerSpeed.ySpeed = PlayerSpeed.ySpeed + PlayerSpeed.yIncrement
+			-- yikes, this part is more complicated. Here we go boys.
+			if (bg1.x > display.contentWidth * 2) then
+				bg1.x = bg3.x - bg3.width
+				bg2.x = bg4.x - bg4.width
 			end
-			if (sDown and PlayerSpeed.ySpeed > PlayerSpeed.yMin) then 									-- S key down
-				PlayerSpeed.ySpeed = PlayerSpeed.ySpeed - PlayerSpeed.yIncrement
+			if (bg3.x > display.contentWidth * 2) then
+				bg3.x = bg5.x - bg5.width
+				bg4.x = bg6.x - bg6.width
 			end
-			if (aDown and PlayerSpeed.xSpeed > PlayerSpeed.xMin) then										-- A key down
-				PlayerSpeed.xSpeed = PlayerSpeed.xSpeed - PlayerSpeed.xIncrement
+			if (bg5.x > display.contentWidth * 2) then
+				bg5.x = bg1.x - bg1.width
+				bg6.x = bg2.x - bg2.width
 			end
-			if (dDown and PlayerSpeed.xSpeed < PlayerSpeed.xMax) then										-- D key down
-				PlayerSpeed.xSpeed = PlayerSpeed.xSpeed + PlayerSpeed.xIncrement
+
+			if (bg1.x < -(display.contentWidth * 2)) then
+				bg1.x = bg3.x + bg3.width
+				bg2.x = bg4.x + bg4.width
 			end
-			if (spaceDown and PlayerStats.currentAmmo > 0) then
-				fireMain()
-				if not fireTimer then
-					fireTimer = timer.performWithDelay ( PlayerStats.fireRate, playerFireTimer )
+			if (bg3.x < -(display.contentWidth * 2)) then
+				bg3.x = bg5.x + bg5.width
+				bg4.x = bg6.x + bg6.width
+			end
+			if (bg5.x < -(display.contentWidth * 2)) then
+				bg5.x = bg1.x + bg1.width
+				bg6.x = bg2.x + bg2.width
+			end
+			bg1:translate( -(PlayerSpeed.xSpeed / 20), PlayerSpeed.ySpeed / 5)
+			bg2:translate( -(PlayerSpeed.xSpeed / 20), PlayerSpeed.ySpeed / 5)
+			bg3:translate( -(PlayerSpeed.xSpeed / 20), PlayerSpeed.ySpeed / 5)
+			bg4:translate( -(PlayerSpeed.xSpeed / 20), PlayerSpeed.ySpeed / 5)
+			bg5:translate( -(PlayerSpeed.xSpeed / 20), PlayerSpeed.ySpeed / 5)
+			bg6:translate( -(PlayerSpeed.xSpeed / 20), PlayerSpeed.ySpeed / 5)
+			-- auto slow down moved to here so it slows down when you die and no longer
+			-- have controls
+			if (PlayerSpeed.xSpeed < 0 and not aDown and not dDown) then
+				PlayerSpeed.xSpeed = PlayerSpeed.xSpeed + PlayerSpeed.xIncrement / 2
+			elseif (PlayerSpeed.xSpeed > 0 and not aDown and not dDown) then
+				PlayerSpeed.xSpeed = PlayerSpeed.xSpeed - PlayerSpeed.xIncrement / 2
+			end
+			if (PlayerSpeed.ySpeed > 0 and not wDown and not sDown) then
+				PlayerSpeed.ySpeed = PlayerSpeed.ySpeed - PlayerSpeed.yIncrement / 4
+			end
+			-- trigger boundaries
+			if ( playerSprite.x ) then
+				if (playerSprite.x < 250) then
+					boundaryLeft.alpha = 0.75
+				elseif (playerSprite.x > display.contentWidth - 250) then
+					boundaryRight.alpha = 0.75
+				else
+					boundaryLeft.alpha = 0
+					boundaryRight.alpha = 0
 				end
 			end
-			-- play animations
-			if (PlayerSpeed.xSpeed == 0) then
-				playerSprite:setFrame(1)
-			elseif (PlayerSpeed.xSpeed < 0 and PlayerSpeed.xSpeed > (PlayerSpeed.xMin / 2)) then
-				playerSprite:setFrame(2)
-			elseif (PlayerSpeed.xSpeed < (PlayerSpeed.xMin / 2)) then
-				playerSprite:setFrame(3)
-			elseif (PlayerSpeed.xSpeed > 0 and PlayerSpeed.xSpeed < (PlayerSpeed.xMax / 2)) then
-				playerSprite:setFrame(4)
-			elseif (PlayerSpeed.xSpeed > (PlayerSpeed.xMax / 2)) then
-				playerSprite:setFrame(5)
-			end
-			-- Preventing a bug where PlayerSpeed went below zero
-			if (PlayerSpeed.ySpeed < 0 ) then
-				PlayerSpeed.ySpeed = 0
-			end
-			playerSprite:setLinearVelocity(PlayerSpeed.xSpeed, 0)
 		end
-	end
 
-	-- collision event
-	local function onCollision( event )
-		if ( event.phase == "began" ) then
-
-			local obj1 = event.object1
-			local obj2 = event.object2
-
-			-- collisions with enemy lasers
-			if ( obj1.myName == "enemyLaser" and obj2.myName == "player" ) then
-				if (PlayerStats.recovering == false and obj1.beamActive == true ) then
-					playerHit()
+		local function keyUpdate ()																										-- WASD function
+			if playerSprite.x then
+				if (wDown and PlayerSpeed.ySpeed < PlayerSpeed.yMax) then 									-- W key down
+					PlayerSpeed.ySpeed = PlayerSpeed.ySpeed + PlayerSpeed.yIncrement
 				end
-			elseif ( obj1.myName == "player" and obj2.myName == "enemyLaser" ) then
-				if (PlayerStats.recovering == false and obj2.beamActive == true) then
-					playerHit()
+				if (sDown and PlayerSpeed.ySpeed > PlayerSpeed.yMin) then 									-- S key down
+					PlayerSpeed.ySpeed = PlayerSpeed.ySpeed - PlayerSpeed.yIncrement
 				end
+				if (aDown and PlayerSpeed.xSpeed > PlayerSpeed.xMin) then										-- A key down
+					PlayerSpeed.xSpeed = PlayerSpeed.xSpeed - PlayerSpeed.xIncrement
+				end
+				if (dDown and PlayerSpeed.xSpeed < PlayerSpeed.xMax) then										-- D key down
+					PlayerSpeed.xSpeed = PlayerSpeed.xSpeed + PlayerSpeed.xIncrement
+				end
+				if (spaceDown and PlayerStats.currentAmmo > 0) then
+					fireMain()
+					if not fireTimer then
+						fireTimer = timer.performWithDelay ( PlayerStats.fireRate, playerFireTimer )
+					end
+				end
+				-- play animations
+				if (PlayerSpeed.xSpeed == 0) then
+					playerSprite:setFrame(1)
+				elseif (PlayerSpeed.xSpeed < 0 and PlayerSpeed.xSpeed > (PlayerSpeed.xMin / 2)) then
+					playerSprite:setFrame(2)
+				elseif (PlayerSpeed.xSpeed < (PlayerSpeed.xMin / 2)) then
+					playerSprite:setFrame(3)
+				elseif (PlayerSpeed.xSpeed > 0 and PlayerSpeed.xSpeed < (PlayerSpeed.xMax / 2)) then
+					playerSprite:setFrame(4)
+				elseif (PlayerSpeed.xSpeed > (PlayerSpeed.xMax / 2)) then
+					playerSprite:setFrame(5)
+				end
+				-- Preventing a bug where PlayerSpeed went below zero
+				if (PlayerSpeed.ySpeed < 0 ) then
+					PlayerSpeed.ySpeed = 0
+				end
+				playerSprite:setLinearVelocity(PlayerSpeed.xSpeed, 0)
 			end
+		end
 
-			-- colliding with regular bullets
-			if ( obj1.myName == "enemyBullet" and obj2.myName == "player" ) then
-				if PlayerStats.recovering == false then
+		-- collision event
+		local function onCollision( event )
+			if ( event.phase == "began" ) then
+
+				local obj1 = event.object1
+				local obj2 = event.object2
+
+				-- collisions with enemy lasers
+				if ( obj1.myName == "enemyLaser" and obj2.myName == "player" ) then
+					if (PlayerStats.recovering == false and obj1.beamActive == true ) then
+						playerHit()
+					end
+				elseif ( obj1.myName == "player" and obj2.myName == "enemyLaser" ) then
+					if (PlayerStats.recovering == false and obj2.beamActive == true) then
+						playerHit()
+					end
+				end
+
+				-- colliding with regular bullets
+				if ( obj1.myName == "enemyBullet" and obj2.myName == "player" ) then
+					if PlayerStats.recovering == false then
+						display.remove( obj1 )
+						playerHit()
+					end
+				elseif ( obj1.myName == "player" and obj2.myName == "enemyBullet" ) then
+					if PlayerStats.recovering == false then
+						display.remove( obj2 )
+						playerHit()
+					end
+				end
+
+				-- player bullets hitting enemies
+				if ( obj1.myName == "allyBullet" and obj2.myName == "enemy" ) then
 					display.remove( obj1 )
-					playerHit()
-				end
-			elseif ( obj1.myName == "player" and obj2.myName == "enemyBullet" ) then
-				if PlayerStats.recovering == false then
+					obj2.stats.health = obj2.stats.health - 1
+					if ( obj2.stats.health <= 0 ) then
+						obj2.destroyed = true
+						PlayerStats.score = math.floor(PlayerStats.score + obj2.worth)
+						updateScore()
+						enemyCount = enemyCount - 1
+						if obj2.tm1 then timer.cancel(obj2.tm1) end
+						if obj2.tm2 then timer.cancel(obj2.tm2) end
+						if obj2.tm3 then timer.cancel(obj2.tm3) end
+						if obj2.tm4 then timer.cancel(obj2.tm4) end
+						if obj2.tm5 then timer.cancel(obj2.tm5) end
+						if obj2.tm6 then timer.cancel(obj2.tm6) end
+						if obj2.tm7 then timer.cancel(obj2.tm7) end
+						explosionEffect( obj2.x, obj2.y )
+						display.remove(obj2._BEAM)
+						obj2:removeSelf()
+						obj2 = nil
+					end
+				elseif ( obj1.myName == "enemy" and obj2.myName == "allyBullet" ) then
 					display.remove( obj2 )
-					playerHit()
+					obj1.stats.health = obj1.stats.health - 1
+					if ( obj1.stats.health <= 0 ) then
+						obj1.destroyed = true
+						PlayerStats.score = math.floor(PlayerStats.score + obj1.worth)
+						updateScore()
+						enemyCount = enemyCount - 1
+						if obj1.tm1 then timer.cancel(obj1.tm1) end
+						if obj1.tm2 then timer.cancel(obj1.tm2) end
+						if obj1.tm3 then timer.cancel(obj1.tm3) end
+						if obj1.tm4 then timer.cancel(obj1.tm4) end
+						if obj1.tm5 then timer.cancel(obj1.tm5) end
+						if obj1.tm6 then timer.cancel(obj1.tm6) end
+						if obj1.tm7 then timer.cancel(obj1.tm7) end
+						explosionEffect( obj1.x, obj1.y )
+						display.remove(obj1._BEAM)
+						obj1:removeSelf()
+						obj1 = nil
+					end
 				end
-			end
 
-			-- player bullets hitting enemies
-			if ( obj1.myName == "allyBullet" and obj2.myName == "enemy" ) then
-				display.remove( obj1 )
-				obj2.stats.health = obj2.stats.health - 1
-				if ( obj2.stats.health <= 0 ) then
-					PlayerStats.score = math.floor(PlayerStats.score + obj2.worth)
-					updateScore()
-					enemyCount = enemyCount - 1
-					if obj2.tm1 then timer.cancel(obj2.tm1) end
-					if obj2.tm2 then timer.cancel(obj2.tm2) end
-					if obj2.tm3 then timer.cancel(obj2.tm3) end
-					if obj2.tm4 then timer.cancel(obj2.tm4) end
-					if obj2.tm5 then timer.cancel(obj2.tm5) end
-					if obj2.tm6 then timer.cancel(obj2.tm6) end
-					if obj2.tm7 then timer.cancel(obj2.tm7) end
-					explosionEffect( obj2.x, obj2.y )
-					display.remove(obj2._BEAM)
-					obj2:removeSelf()
-					obj2 = nil
+			end
+		end
+
+		-- Keyboard events
+		local function onKeyEvent ( event )
+			-- Escape button (mostly for testing)
+			if (event.phase == "down" and event.keyName == "escape") then
+				print("Escape function was called")
+					native.requestExit()
 				end
-			elseif ( obj1.myName == "enemy" and obj2.myName == "allyBullet" ) then
-				display.remove( obj2 )
-				obj1.stats.health = obj1.stats.health - 1
-				if ( obj1.stats.health <= 0 ) then
-					PlayerStats.score = math.floor(PlayerStats.score + obj1.worth)
-					updateScore()
-					enemyCount = enemyCount - 1
-					if obj1.tm1 then timer.cancel(obj1.tm1) end
-					if obj1.tm2 then timer.cancel(obj1.tm2) end
-					if obj1.tm3 then timer.cancel(obj1.tm3) end
-					if obj1.tm4 then timer.cancel(obj1.tm4) end
-					if obj1.tm5 then timer.cancel(obj1.tm5) end
-					if obj1.tm6 then timer.cancel(obj1.tm6) end
-					if obj1.tm7 then timer.cancel(obj1.tm7) end
-					explosionEffect( obj1.x, obj1.y )
-					display.remove(obj1._BEAM)
-					obj1:removeSelf()
-					obj1 = nil
+				-- W button
+				if (event.phase == "down" and event.keyName == "w") then
+					wDown = true
+					print(enemyCount)
 				end
+				if (event.phase == "up" and event.keyName == "w") then
+					wDown = false
+				end
+				-- S button
+				if (event.phase == "down" and event.keyName == "s") then
+					sDown = true
+				end
+				if (event.phase == "up" and event.keyName == "s") then
+					sDown = false
+				end
+				-- A button
+				if (event.phase == "down" and event.keyName == "a") then
+					aDown = true
+				end
+				if (event.phase == "up" and event.keyName == "a") then
+					aDown = false
+				end
+				-- D button
+				if (event.phase == "down" and event.keyName == "d") then
+					dDown = true
+				end
+				if (event.phase == "up" and event.keyName == "d") then
+					dDown = false
+				end
+				-- Space button
+				if (event.phase == "down" and event.keyName == "space") then
+					spaceDown = true
+				end
+				if (event.phase == "up" and event.keyName == "space") then
+					spaceDown = false
+				end
+				return false
 			end
+
+			-- Update function called every frame
+			local function frameListener( event )
+				bgUpdate()
+				keyUpdate()
+			end
+
+			-- Listeners
+			Runtime:addEventListener( "key", onKeyEvent )
+			Runtime:addEventListener( "enterFrame", frameListener )
+			Runtime:addEventListener( "collision", onCollision )
 
 		end
-	end
 
-	-- Keyboard events
-	local function onKeyEvent ( event )
-		-- Escape button (mostly for testing)
-		if (event.phase == "down" and event.keyName == "escape") then
-			print("Escape function was called")
-				native.requestExit()
+
+		-- show()
+		function scene:show( event )
+
+			local sceneGroup = self.view
+			local phase = event.phase
+
+			if ( phase == "will" ) then
+				-- Code here runs when the scene is still off screen (but is about to come on screen)
+
+			elseif ( phase == "did" ) then
+				-- Code here runs when the scene is entirely on screen
+
 			end
-			-- W button
-			if (event.phase == "down" and event.keyName == "w") then
-				wDown = true
-				print(enemyCount)
-			end
-			if (event.phase == "up" and event.keyName == "w") then
-				wDown = false
-			end
-			-- S button
-			if (event.phase == "down" and event.keyName == "s") then
-				sDown = true
-			end
-			if (event.phase == "up" and event.keyName == "s") then
-				sDown = false
-			end
-			-- A button
-			if (event.phase == "down" and event.keyName == "a") then
-				aDown = true
-			end
-			if (event.phase == "up" and event.keyName == "a") then
-				aDown = false
-			end
-			-- D button
-			if (event.phase == "down" and event.keyName == "d") then
-				dDown = true
-			end
-			if (event.phase == "up" and event.keyName == "d") then
-				dDown = false
-			end
-			-- Space button
-			if (event.phase == "down" and event.keyName == "space") then
-				spaceDown = true
-			end
-			if (event.phase == "up" and event.keyName == "space") then
-				spaceDown = false
-			end
-			return false
 		end
 
-		-- Update function called every frame
-		local function frameListener( event )
-			bgUpdate()
-			keyUpdate()
+		-- hide()
+		function scene:hide( event )
+
+			local sceneGroup = self.view
+			local phase = event.phase
+
+			if ( phase == "will" ) then
+				-- Code here runs when the scene is on screen (but is about to go off screen)
+
+			elseif ( phase == "did" ) then
+				-- Code here runs immediately after the scene goes entirely off screen
+
+			end
 		end
 
-		-- Listeners
-		Runtime:addEventListener( "key", onKeyEvent )
-		Runtime:addEventListener( "enterFrame", frameListener )
-		Runtime:addEventListener( "collision", onCollision )
 
-	end
+		-- destroy()
+		function scene:destroy( event )
 
-
-	-- show()
-	function scene:show( event )
-
-		local sceneGroup = self.view
-		local phase = event.phase
-
-		if ( phase == "will" ) then
-			-- Code here runs when the scene is still off screen (but is about to come on screen)
-
-		elseif ( phase == "did" ) then
-			-- Code here runs when the scene is entirely on screen
+			local sceneGroup = self.view
+			-- Code here runs prior to the removal of scene's view
 
 		end
-	end
-
-	-- hide()
-	function scene:hide( event )
-
-		local sceneGroup = self.view
-		local phase = event.phase
-
-		if ( phase == "will" ) then
-			-- Code here runs when the scene is on screen (but is about to go off screen)
-
-		elseif ( phase == "did" ) then
-			-- Code here runs immediately after the scene goes entirely off screen
-
-		end
-	end
 
 
-	-- destroy()
-	function scene:destroy( event )
+		-- -----------------------------------------------------------------------------------
+		-- Scene event function listeners
+		-- -----------------------------------------------------------------------------------
+		scene:addEventListener( "create", scene )
+		scene:addEventListener( "show", scene )
+		scene:addEventListener( "hide", scene )
+		scene:addEventListener( "destroy", scene )
+		-- -----------------------------------------------------------------------------------
 
-		local sceneGroup = self.view
-		-- Code here runs prior to the removal of scene's view
-
-	end
-
-
-	-- -----------------------------------------------------------------------------------
-	-- Scene event function listeners
-	-- -----------------------------------------------------------------------------------
-	scene:addEventListener( "create", scene )
-	scene:addEventListener( "show", scene )
-	scene:addEventListener( "hide", scene )
-	scene:addEventListener( "destroy", scene )
-	-- -----------------------------------------------------------------------------------
-
-	return scene
+		return scene
