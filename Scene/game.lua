@@ -281,6 +281,62 @@ function scene:create( event ) 																									-- create()
 		enemy:removeSelf()
 	end
 
+	-- Bullet attack function
+	 function EnemyClass.enemyFire ( enemy, newParticleTime, x, y )
+		local newLaser = display.newSprite( sceneGroup, bullet1Sheet,
+		bulletModule.bullet1Sequence )
+		newLaser:setSequence("normal")
+		newLaser:play()
+		physics.addBody( newLaser, "dynamic", { isSensor=true } )
+		newLaser.isBullet = true
+		newLaser.myName = "enemyBullet"
+		newLaser.x = x
+		newLaser.y = y
+		mainGroup:insert(newLaser)
+		newLaser:toBack()
+		local randX = ((math.random( 0, 100 )) / 100) * display.contentWidth
+		print(newParticleTime)
+		transition.to( newLaser, { y= display.contentHeight + 50,
+		x = randX, time=newParticleTime,
+		onComplete = function() display.remove( newLaser ) end} )
+		newLaser.isFixedRotation = true
+		local adjVar = display.contentHeight - y
+		local oppVar = randX - x
+		newLaser.rotation = -((math.atan( oppVar / adjVar )) * 180 / math.pi)
+	end
+
+	-- Runner attack function
+	 function EnemyClass.runnerFire ( enemy, newParticleTime, x, y, randX, randomSide )
+		print( particleTime )
+		local newLaser = display.newSprite( sceneGroup, bullet1Sheet,
+		bulletModule.bullet1Sequence )
+		newLaser.x = x
+		newLaser.y = y
+		newLaser:setSequence("normal")
+		newLaser:play()
+		physics.addBody( newLaser, "dynamic", { isSensor=true } )
+		newLaser.isBullet = true
+		newLaser.myName = "enemyBullet"
+		mainGroup:insert(newLaser)
+		newLaser:toBack()
+		if (randX and randomSide == 1) then
+			randX = randX + 300
+		elseif (randX and randomSide == 2) then
+			randX = randX - 300
+		end
+		if randX == false then
+			if randomSide == 1 then randX = x + math.random( 500, 1000 ) end
+			if randomSide == 2 then randX = x + -(math.random( 500, 1000 )) end
+		end
+		transition.to( newLaser, { y= display.contentHeight + 50,
+		x = randX, time=newParticleTime,
+		onComplete = function() display.remove( newLaser ) end} )
+		newLaser.isFixedRotation = true
+		local adjVar = display.contentHeight - y
+		local oppVar = randX - x
+		newLaser.rotation = -((math.atan( oppVar / adjVar )) * 180 / math.pi)
+	end
+
 	----------------------------------------------------------------------- BOMBER
 	function EnemyClass.newBomber()
 		local self = setmetatable({}, EnemyClass)
@@ -372,37 +428,15 @@ function scene:create( event ) 																									-- create()
 			if yVel < 0 then yVel = yVel + 1 end
 			enemy:setLinearVelocity( xVel, yVel )
 		end
-		-- Attack function
-		local function enemyFire ( enemy, newParticleTime )
-			local newLaser = display.newSprite( sceneGroup, bullet1Sheet,
-			bulletModule.bullet1Sequence )
-			-- Add sprite listener
-			newLaser:setSequence("normal")
-			newLaser:play()
-			physics.addBody( newLaser, "dynamic", { isSensor=true } )
-			newLaser.isBullet = true
-			newLaser.myName = "enemyBullet"
-			newLaser.x = enemy.x
-			newLaser.y = enemy.y
-			mainGroup:insert(newLaser)
-			newLaser:toBack()
-			local randX = ((math.random( 0, 100 )) / 100) * display.contentWidth
-			print(newParticleTime)
-			transition.to( newLaser, { y= display.contentHeight + 50,
-			x = randX, time=newParticleTime,
-			onComplete = function() display.remove( newLaser ) end} )
-			newLaser.isFixedRotation = true
-			local adjVar = display.contentHeight - enemy.y
-			local oppVar = randX - enemy.x
-			newLaser.rotation = -((math.atan( oppVar / adjVar )) * 180 / math.pi)
-		end
+
 		-- Call enemy behaviours
 		local newFireTime = 5000 - self.stats.fireRate * 100
 		local newParticleTime = 5000 - self.stats.particleSpeed * 50
 		print(newParticleTime)
 		local myClosure1 = function() return moveEnemy ( self ) end
 		self.tm1 = timer.performWithDelay( math.random( 4000, 6000 ), myClosure1, 0 )
-		local myClosure2 = function() return enemyFire ( self, newParticleTime ) end
+		local myClosure2 = function() return EnemyClass.enemyFire ( self, newParticleTime,
+ 		self.x, self.y ) end
 		self.tm2 = timer.performWithDelay( newFireTime, myClosure2, 0 )
 		local myClosure3 = function() return enemyUpdate ( self ) end
 		self.tm3 = timer.performWithDelay( 250, myClosure3, 0 )
@@ -745,32 +779,6 @@ function scene:create( event ) 																									-- create()
 			end
 		end
 
-		-- Attack function
-		local bulletX, bulletY
-		local function enemyFire ( enemy, newParticleTime, x, y )
-			local newLaser = display.newSprite( sceneGroup, bullet1Sheet,
-			bulletModule.bullet1Sequence )
-			-- Add sprite listener
-			newLaser:setSequence("normal")
-			newLaser:play()
-			physics.addBody( newLaser, "dynamic", { isSensor=true } )
-			newLaser.isBullet = true
-			newLaser.myName = "enemyLaser"
-			newLaser.x = x
-			newLaser.y = y
-			mainGroup:insert(newLaser)
-			newLaser:toBack()
-			local randX = ((math.random( 0, 100 )) / 100) * display.contentWidth
-			print(newParticleTime)
-			transition.to( newLaser, { y= display.contentHeight + 50,
-			x = randX, time=newParticleTime,
-			onComplete = function() display.remove( newLaser ) end} )
-			newLaser.isFixedRotation = true
-			local adjVar = display.contentHeight - y
-			local oppVar = randX - x
-			newLaser.rotation = -((math.atan( oppVar / adjVar )) * 180 / math.pi)
-		end
-
 		-- Call enemy behaviours
 		local newFireTime = 10000 - self.stats.fireRate * 100
 		local newFireTime2 = 5000 - self.stats.fireRate * 100
@@ -784,9 +792,8 @@ function scene:create( event ) 																									-- create()
 		self.tm3 = timer.performWithDelay( 250, myClosure3, 0 )
 		local myClosure4 = function() return beamUpdate () end
 		self.tm4 = timer.performWithDelay( 25, myClosure4, 0 )
-		bulletX, bulletY = self.x, self.y
-		local myClosure5 = function() return enemyFire ( self, newParticleTime,
- 		bulletX, bulletY ) end
+		local myClosure5 = function() return EnemyClass.enemyFire ( self, newParticleTime,
+ 		self.x, self.y ) end
 		self.tm5 = timer.performWithDelay( newFireTime2, myClosure5, 0 )
 		local statTotal = 0
 		return self
@@ -876,44 +883,12 @@ function scene:create( event ) 																									-- create()
 				end
 			end} )
 		end
-		-- Attack function
-		local randX = false
 		local newParticleTime = 5000 - self.stats.particleSpeed * 50
-		local function enemyFire ()
-			local laserX, laserY = self.x, self.y
-			local newLaser = display.newSprite( sceneGroup, bullet1Sheet,
-			bulletModule.bullet1Sequence )
-			newLaser.x = laserX
-			newLaser.y = laserY
-			-- Add sprite listener
-			newLaser:setSequence("normal")
-			newLaser:play()
-			physics.addBody( newLaser, "dynamic", { isSensor=true } )
-			newLaser.isBullet = true
-			newLaser.myName = "enemyBullet"
-
-			mainGroup:insert(newLaser)
-			newLaser:toBack()
-			if (randX and randomSide == 1) then
-				randX = randX + 300
-			elseif (randX and randomSide == 2) then
-				randX = randX - 300
-			end
-			if randX == false then
-				if randomSide == 1 then randX = laserX + math.random( 500, 1000 ) end
-				if randomSide == 2 then randX = laserX + -(math.random( 500, 1000 )) end
-			end
-			transition.to( newLaser, { y= display.contentHeight + 50,
-			x = randX, time=newParticleTime,
-			onComplete = function() display.remove( newLaser ) end} )
-			newLaser.isFixedRotation = true
-			local adjVar = display.contentHeight - laserY
-			local oppVar = randX - laserX
-			newLaser.rotation = -((math.atan( oppVar / adjVar )) * 180 / math.pi)
-		end
 		-- Call enemy behaviours
 		moveEnemy()
-		self.tm1 = timer.performWithDelay( 1000, enemyFire, 3)
+		local myClosure = function() return EnemyClass.runnerFire ( self, newParticleTime,
+ 		self.x, self.y, false, randomSide ) end
+		self.tm5 = timer.performWithDelay( 1000, myClosure, 3 )
 		local statTotal = 0
 		return self
 	end
@@ -935,7 +910,6 @@ function scene:create( event ) 																									-- create()
 		end
 	end
 
-	--
 	local function gameLoop ()
 		if enemyCount <= 0 then
 			if PlayerStats.score <= 30 then
@@ -959,7 +933,12 @@ function scene:create( event ) 																									-- create()
 		end
 		local gameTimer = timer.performWithDelay( 6000, gameLoop, 0 )
 
-
+		local function pointsforTimeLoop ()
+			print("10 seconds has passed")
+			PlayerStats.score = PlayerStats.score + 1
+			updateScore()
+		end
+		local survivalPointsTimer = timer.performWithDelay( 10000, pointsforTimeLoop, 0)
 
 		-- update ammo supply
 		local function updateAmmo ()
@@ -1155,7 +1134,7 @@ function scene:create( event ) 																									-- create()
 				-- player bullets hitting enemies
 				if ( obj1.myName == "allyBullet" and obj2.myName == "enemy" ) then
 					display.remove( obj1 )
-					obj2.stats.health = obj2.stats.health - 1
+					obj2.stats.health = obj2.stats.health - 10
 					if ( obj2.stats.health <= 0 ) then
 						obj2.destroyed = true
 						PlayerStats.score = math.floor(PlayerStats.score + obj2.worth)
@@ -1175,7 +1154,7 @@ function scene:create( event ) 																									-- create()
 					end
 				elseif ( obj1.myName == "enemy" and obj2.myName == "allyBullet" ) then
 					display.remove( obj2 )
-					obj1.stats.health = obj1.stats.health - 1
+					obj1.stats.health = obj1.stats.health - 10
 					if ( obj1.stats.health <= 0 ) then
 						obj1.destroyed = true
 						PlayerStats.score = math.floor(PlayerStats.score + obj1.worth)
@@ -1208,6 +1187,7 @@ function scene:create( event ) 																									-- create()
 				-- W button
 				if (event.phase == "down" and event.keyName == "w") then
 					--wDown = true -- disabled
+					print(enemyCount)
 				end
 				if (event.phase == "up" and event.keyName == "w") then
 					--wDown = false
