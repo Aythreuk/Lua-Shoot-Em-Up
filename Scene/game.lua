@@ -746,7 +746,8 @@ function scene:create( event ) 																									-- create()
 		end
 
 		-- Attack function
-		local function enemyFire ( enemy, newParticleTime )
+		local bulletX, bulletY
+		local function enemyFire ( enemy, newParticleTime, x, y )
 			local newLaser = display.newSprite( sceneGroup, bullet1Sheet,
 			bulletModule.bullet1Sequence )
 			-- Add sprite listener
@@ -755,8 +756,8 @@ function scene:create( event ) 																									-- create()
 			physics.addBody( newLaser, "dynamic", { isSensor=true } )
 			newLaser.isBullet = true
 			newLaser.myName = "enemyLaser"
-			newLaser.x = enemy.x
-			newLaser.y = enemy.y
+			newLaser.x = x
+			newLaser.y = y
 			mainGroup:insert(newLaser)
 			newLaser:toBack()
 			local randX = ((math.random( 0, 100 )) / 100) * display.contentWidth
@@ -765,8 +766,8 @@ function scene:create( event ) 																									-- create()
 			x = randX, time=newParticleTime,
 			onComplete = function() display.remove( newLaser ) end} )
 			newLaser.isFixedRotation = true
-			local adjVar = display.contentHeight - enemy.y
-			local oppVar = randX - enemy.x
+			local adjVar = display.contentHeight - y
+			local oppVar = randX - x
 			newLaser.rotation = -((math.atan( oppVar / adjVar )) * 180 / math.pi)
 		end
 
@@ -783,7 +784,9 @@ function scene:create( event ) 																									-- create()
 		self.tm3 = timer.performWithDelay( 250, myClosure3, 0 )
 		local myClosure4 = function() return beamUpdate () end
 		self.tm4 = timer.performWithDelay( 25, myClosure4, 0 )
-		local myClosure5 = function() return enemyFire ( self, newParticleTime ) end
+		bulletX, bulletY = self.x, self.y
+		local myClosure5 = function() return enemyFire ( self, newParticleTime,
+ 		bulletX, bulletY ) end
 		self.tm5 = timer.performWithDelay( newFireTime2, myClosure5, 0 )
 		local statTotal = 0
 		return self
