@@ -71,7 +71,7 @@ function scene:create( event ) 																									-- create()
 	-- bg constructor
 	local function createBg ()
 		local self = {}
-		self = display.newImage( sceneGroup, "Images/background4.png" )
+		self = display.newImage( sceneGroup, "Images/background1.png" )
 		self.width = display.contentWidth * 2
 		self.height = display.contentHeight * 2
 		bgGroup:insert( self )
@@ -809,6 +809,7 @@ function scene:create( event ) 																									-- create()
 		self.stats.maxSpeed = 40
 		self.stats.health = 1
 		self.destroyed = false
+		self.tm1 = false
 		self.worth =  PlayerStats.score / 10
 		if self.worth < 3 then self.worth = 3 end
 		-- Let's spawn on a random side
@@ -909,7 +910,7 @@ function scene:create( event ) 																									-- create()
 		end
 		-- Call enemy behaviours
 		moveEnemy()
-		timer.performWithDelay( 1000, enemyFire, 3)
+		self.tm1 = timer.performWithDelay( 1000, enemyFire, 3)
 		local statTotal = 0
 		return self
 	end
@@ -1059,9 +1060,11 @@ function scene:create( event ) 																									-- create()
 			elseif (PlayerSpeed.xSpeed > 0 and not aDown and not dDown) then
 				PlayerSpeed.xSpeed = PlayerSpeed.xSpeed - PlayerSpeed.xIncrement / 2
 			end
+			--[[
 			if (PlayerSpeed.ySpeed > 0 and not wDown and not sDown) then
 				PlayerSpeed.ySpeed = PlayerSpeed.ySpeed - PlayerSpeed.yIncrement / 4
 			end
+			--]]
 			-- trigger boundaries
 			if ( playerSprite.x ) then
 				if (playerSprite.x < 250) then
@@ -1201,18 +1204,17 @@ function scene:create( event ) 																									-- create()
 				end
 				-- W button
 				if (event.phase == "down" and event.keyName == "w") then
-					wDown = true
-					print(enemyCount)
+					--wDown = true -- disabled
 				end
 				if (event.phase == "up" and event.keyName == "w") then
-					wDown = false
+					--wDown = false
 				end
 				-- S button
 				if (event.phase == "down" and event.keyName == "s") then
-					sDown = true
+					--sDown = true -- disabled
 				end
 				if (event.phase == "up" and event.keyName == "s") then
-					sDown = false
+					--sDown = false
 				end
 				-- A button
 				if (event.phase == "down" and event.keyName == "a") then

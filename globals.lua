@@ -1,7 +1,7 @@
 PlayerSpeed =																															-- Speed variables
 {
-	ySpeed = 0,
-	yMax = 100,
+	ySpeed = 75,
+	yMax = 75,
 	yMin = 0,
 	yIncrement = 5,
 	xSpeed = 0,
