@@ -66,36 +66,37 @@ function scene:create( event ) 																									-- create()
 	-- Code here runs when the scene is first created but has not yet appeared on screen
 
 	-- Variables and stuff  that has to be in the create scope
-	local ammoBarTable, lifeBarTable, enemyCount = {}, {}, 0
+	local ammoBarTable, lifeBarTable, enemyCount, enemyTable = {}, {}, 0, {}
+	local currentBg = 1
+
+	-- collection of background images for swapping
+	local bgImageCache = {
+		"Images/background1.png",
+		"Images/background2.png",
+		"Images/background3.png",
+		"Images/background4.png",
+}
 
 	-- bg constructor
-	local function createBg ()
+	local function createBg ( bgNum, x, y )
 		local self = {}
-		self = display.newImage( sceneGroup, "Images/background1.png" )
+		self = display.newImage( sceneGroup, bgImageCache[bgNum] )
+		self.alpha = 0
 		self.width = display.contentWidth * 2
 		self.height = display.contentHeight * 2
+		self.x = x
+		self.y = y
 		bgGroup:insert( self )
+		transition.fadeIn( self, {time=2000})
+		print(os.time())
 		return self
 	end
-	local bg1 = createBg ()
-	local bg2 = createBg ()
-	local bg3 = createBg ()
-	local bg4 = createBg ()
-	local bg5 = createBg ()
-	local bg6 = createBg ()
-	-- Initial positions for the 6 background panels
-	bg1.x = display.contentCenterX
-	bg1.y = display.contentCenterY
-	bg2.x = display.contentCenterX
-	bg2.y = bg1.y - bg1.height
-	bg3.x = bg1.x + bg1.width
-	bg3.y = bg1.y
-	bg4.x = bg2.x + bg2.width
-	bg4.y = bg2.y
-	bg5.x = bg1.x - bg1.width
-	bg5.y = bg1.y
-	bg6.x = bg2.x - bg2.width
-	bg6.y = bg2.y
+	local bg1 = createBg ( 1, display.contentCenterX, display.contentCenterY )
+	local bg2 = createBg ( 1, display.contentCenterX, bg1.y - bg1.height )
+	local bg3 = createBg ( 1, bg1.x + bg1.width, bg1.y )
+	local bg4 = createBg ( 1, bg2.x + bg2.width, bg2.y )
+	local bg5 = createBg ( 1, bg1.x - bg1.width, bg1.y )
+	local bg6 = createBg ( 1, bg2.x - bg2.width, bg2.y )
 
 	--boundary constructor
 	local function makeBoundaries ( x )
@@ -335,6 +336,51 @@ function scene:create( event ) 																									-- create()
 		local adjVar = display.contentHeight - y
 		local oppVar = randX - x
 		newLaser.rotation = -((math.atan( oppVar / adjVar )) * 180 / math.pi)
+	end
+
+	-- new beam
+	function EnemyClass.newBeam( enemy, x, y, height )
+		local obj = nil
+		local x1, y1 = enemy.x, enemy.y + enemy.height / 4
+
+		local function getBeamEnd ( startX )
+			return math.random(startX - 1000, startX + 1000), display.contentHeight + 1000
+		end
+
+		local x2, y2 = getBeamEnd(enemy.x)
+		obj = display.newLine( sceneGroup, x1, y1, x2, y2 )
+		obj:setStrokeColor( 1, 0, 0, 0 )
+		obj.strokeWidth = 4
+		mainGroup:insert(obj)
+		obj:toBack()
+		physics.addBody( obj, "dynamic", { isSensor=true } )
+		obj.isBullet = true
+		obj.beamActive = false
+		obj.myName = "enemyLaser"
+		return obj
+	end
+
+	--  beam warn player
+	function EnemyClass.warnPlayer ( enemy )
+		enemy._BEAM = EnemyClass.newBeam( enemy )
+		enemy._BEAM:setStrokeColor( 1, 0, 0, 0.5 )
+		local myClosure = function() return EnemyClass.enemyFire ( enemy ) end
+		enemy.tm5 = timer.performWithDelay( 1500, myClosure )
+	end
+
+	-- beam cease fire
+	 function EnemyClass.stopFiring ()
+		self.beamActive = false
+		display.remove( self._BEAM )
+		self._BEAM = nil
+	end
+	-- Beam attack function
+	 function EnemyClass.enemyFire ( enemy )
+		enemy._BEAM.beamActive = true
+		enemy._BEAM.strokeWidth = 10
+		enemy._BEAM:setStrokeColor( 1, 0, 0, 1 )
+		local myClosure = function() return EnemyClass.stopFiring ( enemy ) end
+		enemy.tm6 = timer.performWithDelay( enemy.stats.beamDuration, myClosure )
 	end
 
 	----------------------------------------------------------------------- BOMBER
@@ -701,29 +747,7 @@ function scene:create( event ) 																									-- create()
 		self.stats.beamDuration = self.stats.beamDuration * 50 + 1000
 		print("Health: ", self.stats.health, "\nFire rate is: ", self.stats.fireRate,
 		"\nParticle speed is: ", self.stats.beamDuration)
-		-- create "beam"
 		self._BEAM = nil
-		local function newBeam()
-			local obj = nil
-			local x1, y1 = self.x, self.y + self.height / 4
-
-			local function getBeamEnd ( startX )
-				return math.random(startX - 1000, startX + 1000), display.contentHeight + 1000
-			end
-
-			local x2, y2 = getBeamEnd(self.x)
-			obj = display.newLine( sceneGroup, x1, y1, x2, y2 )
-			obj:setStrokeColor( 1, 0, 0, 0 )
-			obj.strokeWidth = 4
-			mainGroup:insert(obj)
-			obj:toBack()
-			physics.addBody( obj, "dynamic", { isSensor=true } )
-			obj.isBullet = true
-			obj.beamActive = false
-			obj.myName = "enemyLaser"
-			return obj
-		end
-		self._BEAM = newBeam()
 		-- Move function
 		local function moveEnemy( enemy )
 			local randX, randY = math.random( -100, 100 ), math.random( -100, 100 )
@@ -752,25 +776,7 @@ function scene:create( event ) 																									-- create()
 			if yVel < 0 then yVel = yVel + 1 end
 			enemy:setLinearVelocity( xVel, yVel )
 		end
-		-- cease fire
-		local function stopFiring ()
-			self._BEAM.beamActive = false
-			self._BEAM.strokeWidth = 4
-			self._BEAM:setStrokeColor( 1, 0, 0, 0 )
-			self._BEAM = newBeam()
-		end
-		-- Attack function
-		local function enemyFire ()
-			self._BEAM.beamActive = true_BEAM
-			self._BEAM.strokeWidth = 10
-			self._BEAM:setStrokeColor( 1, 0, 0, 1 )
-			self.tm6 = timer.performWithDelay( self.stats.beamDuration, stopFiring )
-		end
-		-- warn player
-		local function warnPlayer ()
-			self._BEAM:setStrokeColor( 1, 0, 0, 0.5 )
-			self.tm5 = timer.performWithDelay( 1500, enemyFire )
-		end
+
 		-- update beam position
 		local function beamUpdate ()
 			if self._BEAM then
@@ -780,13 +786,13 @@ function scene:create( event ) 																									-- create()
 		end
 
 		-- Call enemy behaviours
-		local newFireTime = 10000 - self.stats.fireRate * 100
-		local newFireTime2 = 5000 - self.stats.fireRate * 100
+		local newFireTime = 10000 - self.stats.fireRate * 100 -- for the beam
+		local newFireTime2 = 5000 - self.stats.fireRate * 100 -- for the bullets
 		local newParticleTime = 5000 - self.stats.particleSpeed * 50
 		print("Laser will begin every: ", newFireTime)
 		local myClosure1 = function() return moveEnemy () end
 		self.tm1 = timer.performWithDelay( math.random( 4000, 6000 ), myClosure1, 0 )
-		local myClosure2 = function() return warnPlayer () end
+		local myClosure2 = function() return EnemyClass.warnPlayer ( self ) end
 		self.tm2 = timer.performWithDelay( newFireTime, myClosure2, 0 )
 		local myClosure3 = function() return enemyUpdate ( self ) end
 		self.tm3 = timer.performWithDelay( 250, myClosure3, 0 )
@@ -893,6 +899,53 @@ function scene:create( event ) 																									-- create()
 		return self
 	end
 
+	-- new bg fade in
+	local function fadeInBg ( bgNum )
+		print("Made it to the fade in!")
+		lastX = bg1.x
+		lastY = bg1.y
+		bg1 = createBg( bgNum, lastX, lastY )
+		lastX = bg2.x
+		lastY = bg2.y
+		bg2 = createBg( bgNum, lastX, lastY )
+		lastX = bg3.x
+		lastY = bg3.y
+		bg3 = createBg( bgNum, lastX, lastY )
+		lastX = bg4.x
+		lastY = bg4.y
+		bg4 = createBg( bgNum, lastX, lastY )
+		lastX = bg5.x
+		lastY = bg5.y
+		bg5 = createBg( bgNum, lastX, lastY )
+		lastX = bg6.x
+		lastY = bg6.y
+		bg6 = createBg( bgNum, lastX, lastY )
+		transition.fadeOut( bg1, { time=2000 } )
+		transition.fadeIn( bg2, { time=2000 } )
+		transition.fadeIn( bg3, { time=2000 } )
+		transition.fadeIn( bg4, { time=2000 } )
+		transition.fadeIn( bg5, { time=2000 } )
+		transition.fadeIn( bg6, { time=2000 } )
+	end
+
+	-- old background fade out and pass value
+	local function fadeOutBg ( bgNum )
+		print(bgNum, currentBg)
+		if (bgNum ~= currentBg) then
+			print("Made it inside the fade out if statement")
+			transition.fadeOut( bg1,{ time=2000 } )
+			transition.fadeOut( bg2,{ time=2000 } )
+			transition.fadeOut( bg3,{ time=2000 } )
+			transition.fadeOut( bg4,{ time=2000 } )
+			transition.fadeOut( bg5,{ time=2000 } )
+			transition.fadeOut( bg6,{ time=2000 } )
+			currentBg = bgNum
+			timer.performWithDelay( 2000, fadeInBg( bgNum ))
+		elseif bgNum == currentBg then
+			print("Still on current 'stage'")
+		end
+	end
+
 	local function spawnEnemies ( randShip, amountofEnemies )
 		for i = 1, amountofEnemies do
 			local rngNum = math.random( 1, randShip )
@@ -910,24 +963,36 @@ function scene:create( event ) 																									-- create()
 		end
 	end
 
+EnemyClass.newFrigate()
+EnemyClass.newFrigate()
+EnemyClass.newFrigate()
+
 	local function gameLoop ()
 		if enemyCount <= 0 then
 			if PlayerStats.score <= 30 then
 				EnemyClass.newBomber() -- no need to even call the function
 				elseif PlayerStats.score > 30 and PlayerStats.score <= 100 then
 					spawnEnemies( 2, 2 ) -- possible ships to spawn, amount of ships
+					fadeOutBg( 2 )
+					print("Printing")
 				elseif PlayerStats.score > 100 and PlayerStats.score <= 200 then
 					spawnEnemies( 3, 2 )
+					fadeOutBg( 3 )
 				elseif PlayerStats.score > 200 and PlayerStats.score <= 300 then
 					spawnEnemies( 3, 3 )
+					fadeOutBg( 4 )
 				elseif PlayerStats.score > 300 and PlayerStats.score <= 500 then
 					spawnEnemies( 4, 3 )
+					--fadeOutBg( 4 )
 				elseif PlayerStats.score > 500 and PlayerStats.score <= 700 then
 					spawnEnemies( 4, 4 )
+					--fadeOutBg( 4 )
 				elseif PlayerStats.score > 700 and PlayerStats.score <= 1000 then
 					spawnEnemies( 4, 5 )
+					--fadeOutBg( 4 )
 				elseif PlayerStats.score > 1000 then
 					spawnEnemies( 4, 6 )
+					--fadeOutBg( 4 )
 				end
 			end
 		end
