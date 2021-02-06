@@ -9,6 +9,7 @@ local scene = composer.newScene()
 
 
 local bgGroup = display.newGroup()																							-- Setup display groups
+local coverGroup = display.newGroup()
 local mainGroup = display.newGroup()
 local uiGroup = display.newGroup()
 
@@ -61,6 +62,7 @@ function scene:create( event ) 																									-- create()
 
 	local sceneGroup = self.view
 	sceneGroup:insert(bgGroup)
+	sceneGroup:insert(coverGroup)
 	sceneGroup:insert(mainGroup)
 	sceneGroup:insert(uiGroup)
 	-- Code here runs when the scene is first created but has not yet appeared on screen
@@ -75,20 +77,18 @@ function scene:create( event ) 																									-- create()
 		"Images/background2.png",
 		"Images/background3.png",
 		"Images/background4.png",
-}
+	}
 
 	-- bg constructor
 	local function createBg ( bgNum, x, y )
 		local self = {}
 		self = display.newImage( sceneGroup, bgImageCache[bgNum] )
-		self.alpha = 0
 		self.width = display.contentWidth * 2
 		self.height = display.contentHeight * 2
 		self.x = x
 		self.y = y
 		bgGroup:insert( self )
-		transition.fadeIn( self, {time=2000})
-		print(os.time())
+		bgGroup:toBack()
 		return self
 	end
 	local bg1 = createBg ( 1, display.contentCenterX, display.contentCenterY )
@@ -97,11 +97,31 @@ function scene:create( event ) 																									-- create()
 	local bg4 = createBg ( 1, bg2.x + bg2.width, bg2.y )
 	local bg5 = createBg ( 1, bg1.x - bg1.width, bg1.y )
 	local bg6 = createBg ( 1, bg2.x - bg2.width, bg2.y )
+	--background cover
+	local function deleteCover ()
+		local bgCover = display.newRect( coverGroup, display.contentCenterX,
+		display.contentCenterY, display.contentWidth, display.contentHeight )
+		bgCover:toFront()
+		bgCover:setFillColor( 0, 0, 0, 1 )
+		transition.fadeOut( bgCover, { time=2000, onComplete = function ()
+ 		display.remove( bgCover ) end} )
+	end
+
+deleteCover()
+
+local function createCover ()
+	local bgCover = display.newRect( coverGroup, display.contentCenterX,
+	display.contentCenterY, display.contentWidth, display.contentHeight )
+	bgCover:toFront()
+	bgCover:setFillColor( 0 )
+	transition.fadeIn( bgCover, { time=2000, onComplete = function ()
+	display.remove( bgCover ) end} )
+end
 
 	--boundary constructor
 	local function makeBoundaries ( x )
 		local self = {}
-		self = display.newRect ( bgGroup, x, display.contentHeight - 225,
+		self = display.newRect ( uiGroup, x, display.contentHeight - 225,
 		80, 300 )
 		self:setFillColor ( 1, 0, 0, 0.25 )
 		physics.addBody( self, "static" )
@@ -283,7 +303,7 @@ function scene:create( event ) 																									-- create()
 	end
 
 	-- Bullet attack function
-	 function EnemyClass.enemyFire ( enemy, newParticleTime, x, y )
+	function EnemyClass.enemyFire ( enemy, newParticleTime, x, y )
 		local newLaser = display.newSprite( sceneGroup, bullet1Sheet,
 		bulletModule.bullet1Sequence )
 		newLaser:setSequence("normal")
@@ -296,7 +316,6 @@ function scene:create( event ) 																									-- create()
 		mainGroup:insert(newLaser)
 		newLaser:toBack()
 		local randX = ((math.random( 0, 100 )) / 100) * display.contentWidth
-		print(newParticleTime)
 		transition.to( newLaser, { y= display.contentHeight + 50,
 		x = randX, time=newParticleTime,
 		onComplete = function() display.remove( newLaser ) end} )
@@ -307,7 +326,7 @@ function scene:create( event ) 																									-- create()
 	end
 
 	-- Runner attack function
-	 function EnemyClass.runnerFire ( enemy, newParticleTime, x, y, randX, randomSide )
+	function EnemyClass.runnerFire ( enemy, newParticleTime, x, y, randX, randomSide )
 		print( particleTime )
 		local newLaser = display.newSprite( sceneGroup, bullet1Sheet,
 		bulletModule.bullet1Sequence )
@@ -336,51 +355,6 @@ function scene:create( event ) 																									-- create()
 		local adjVar = display.contentHeight - y
 		local oppVar = randX - x
 		newLaser.rotation = -((math.atan( oppVar / adjVar )) * 180 / math.pi)
-	end
-
-	-- new beam
-	function EnemyClass.newBeam( enemy, x, y, height )
-		local obj = nil
-		local x1, y1 = enemy.x, enemy.y + enemy.height / 4
-
-		local function getBeamEnd ( startX )
-			return math.random(startX - 1000, startX + 1000), display.contentHeight + 1000
-		end
-
-		local x2, y2 = getBeamEnd(enemy.x)
-		obj = display.newLine( sceneGroup, x1, y1, x2, y2 )
-		obj:setStrokeColor( 1, 0, 0, 0 )
-		obj.strokeWidth = 4
-		mainGroup:insert(obj)
-		obj:toBack()
-		physics.addBody( obj, "dynamic", { isSensor=true } )
-		obj.isBullet = true
-		obj.beamActive = false
-		obj.myName = "enemyLaser"
-		return obj
-	end
-
-	--  beam warn player
-	function EnemyClass.warnPlayer ( enemy )
-		enemy._BEAM = EnemyClass.newBeam( enemy )
-		enemy._BEAM:setStrokeColor( 1, 0, 0, 0.5 )
-		local myClosure = function() return EnemyClass.enemyFire ( enemy ) end
-		enemy.tm5 = timer.performWithDelay( 1500, myClosure )
-	end
-
-	-- beam cease fire
-	 function EnemyClass.stopFiring ()
-		self.beamActive = false
-		display.remove( self._BEAM )
-		self._BEAM = nil
-	end
-	-- Beam attack function
-	 function EnemyClass.enemyFire ( enemy )
-		enemy._BEAM.beamActive = true
-		enemy._BEAM.strokeWidth = 10
-		enemy._BEAM:setStrokeColor( 1, 0, 0, 1 )
-		local myClosure = function() return EnemyClass.stopFiring ( enemy ) end
-		enemy.tm6 = timer.performWithDelay( enemy.stats.beamDuration, myClosure )
 	end
 
 	----------------------------------------------------------------------- BOMBER
@@ -482,873 +456,725 @@ function scene:create( event ) 																									-- create()
 		local myClosure1 = function() return moveEnemy ( self ) end
 		self.tm1 = timer.performWithDelay( math.random( 4000, 6000 ), myClosure1, 0 )
 		local myClosure2 = function() return EnemyClass.enemyFire ( self, newParticleTime,
- 		self.x, self.y ) end
-		self.tm2 = timer.performWithDelay( newFireTime, myClosure2, 0 )
-		local myClosure3 = function() return enemyUpdate ( self ) end
-		self.tm3 = timer.performWithDelay( 250, myClosure3, 0 )
-		local statTotal = 0
-		return self
-	end
-
-	-- -------------------------------------------------------------------- DESTROYER
-	function EnemyClass.newDestroyer()
-		local self = setmetatable({}, EnemyClass)
-		enemyCount = enemyCount + 1
-		self = display.newImage ( sceneGroup, "Images/enemy2.png" )
-		mainGroup:insert( self )
-		physics.addBody( self, "dynamic" )
-		self.isFixedRotation = true
-		self.myName = "enemy"
-		self.stats = {} -- Had to declare these out here for scoping
-		self.stats.maxFireRate = 40
-		self.stats.maxParticleSpeed = 40
-		self.stats.maxHealth = 15
-		self.stats.health = 0
-		self.stats.fireRate = 0
-		self.stats.particleSpeed = 0
-		self.tm1 = false
-		self.tm2 = false
-		self.tm3 = false
-		self.tm4 = false
-		self.tm5 = false
-		self.tm6 = false
-		self.tm7 = false
-		self.worth =  PlayerStats.score / 10
-		-- Let's spawn on a random side
-		local randomSide = math.random( 1, 3 ) -- 1 is west, 2 is north, 3 is east
-		if (randomSide == 1) then
-			self.x = -50
-			self.y = math.random( -50, display.contentHeight / 2 )
-		elseif (randomSide == 2) then
-			self.x = math.random( -50, display.contentWidth )
-			self.y = -50
-		else
-			self.x = display.contentWidth + 50
-			self.y = math.random( -50, display.contentHeight / 2 )
-		end
-		-- Assign random stats to enemy
-		local statTotal = 0
-		if self.worth < 3 then self.worth = 3 end
-		repeat
-			-- Make sure there is at least one point in everything
-			local rand = math.random( 1, 3 )
-			statTotal = statTotal + rand
-			if self.stats.health == 0 then
-				self.stats.health = rand
-			elseif self.stats.fireRate == 0 then
-				self.stats.fireRate = rand
-			elseif self.stats.particleSpeed == 0 then
-				self.stats.particleSpeed = rand
-			else
-				-- Randomly dish out remaining points
-				local rand2 = 0
-				local rand2 = math.random( 1, 3 )
-				if (rand2 == 1 and self.stats.health < self.stats.maxHealth - 3) then
-					self.stats.health = self.stats.health + rand
-				elseif (rand2 == 2 and self.stats.fireRate < self.stats.maxFireRate - 3) then
-					self.stats.fireRate = self.stats.fireRate + rand
-				elseif (rand2 == 3 and
-				self.stats.particleSpeed < self.stats.maxParticleSpeed - 3) then
-					self.stats.particleSpeed = self.stats.particleSpeed + rand
-				else
-					print("There has been an error")
-				end
-			end
-		until (statTotal > self.worth)
-		print("Health: ", self.stats.health, "\nFire rate is: ", self.stats.fireRate,
-		"\nParticle speed is: ", self.stats.particleSpeed)
-		-- create "beam"
-		self._BEAM = nil
-		local x1, y1, x2, y2, x3, y3, beamRight
-		local function newBeam()
-			local obj = nil
-			local function getBeamEnd ( startX )
-				return math.random(startX - 1000, startX + 1000), display.contentHeight + 1000
-			end
-			x1, y1 = self.x, self.y + self.height / 2
-			x2, y2 = getBeamEnd(self.x)
-			if x1 > x2 then
-				beamRight = false
-			else
-				beamRight = true
-			end
-			x3, y3 = math.abs( x1 - x2 ), math.abs( y1 - y2 )
-			obj = display.newLine( sceneGroup, x1, y1, x2, y2 )
-			obj:setStrokeColor( 1, 0, 0, 0 )
-			obj.strokeWidth = 4
-			mainGroup:insert(obj)
-			obj:toBack()
-			physics.addBody( obj, "dynamic", { isSensor=true } )
-			obj.isBullet = true
-			obj.beamActive = false
-			obj.myName = "enemyLaser"
-			return obj
-		end
-		self._BEAM = newBeam()
-		-- Move function
-		local function moveEnemy( enemy )
-			local randX, randY = math.random( -100, 100 ), math.random( -100, 100 )
-			self:setLinearVelocity( randX, randY )
-		end
-		-- Smooth out movement and keep on screen
-		local function enemyUpdate ( enemy )
-			local xVel, yVel = enemy:getLinearVelocity()
-			-- shepherd back onto the screen
-			if (enemy.x < 100 and xVel <= 0) then
-				xVel = math.random( 25, 100 )
-			end
-			if (enemy.x > display.contentWidth - 100 and xVel >= 0) then
-				xVel = -(math.random( 25, 100 ))
-			end
-			if (enemy.y < 100 and yVel <= 0) then
-				yVel = math.random( 25, 100 )
-			end
-			if (enemy.y > display.contentHeight / 2 and yVel >= 0) then
-				yVel = -(math.random( 25, 100 ))
-			end
-			-- Slow down and look natural
-			if xVel > 0 then xVel = xVel - 1 end
-			if xVel < 0 then xVel = xVel + 1 end
-			if yVel > 0 then yVel = yVel - 1 end
-			if yVel < 0 then yVel = yVel + 1 end
-			enemy:setLinearVelocity( xVel, yVel )
-		end
-		-- cease fire
-		local function stopFiring ()
-			self._BEAM.beamActive = false
-			self._BEAM.strokeWidth = 4
-			self._BEAM:setStrokeColor( 1, 0, 0, 0 )
-			self._BEAM = newBeam()
-		end
-		-- Attack function
-		local function enemyFire ()
-			self._BEAM.beamActive = true
-			self._BEAM.strokeWidth = 10
-			self._BEAM:setStrokeColor( 1, 0, 0, 1 )
-			self.tm6 = timer.performWithDelay( 1500, stopFiring )
-		end
-		-- warn player
-		local function warnPlayer ()
-			self._BEAM:setStrokeColor( 1, 0, 0, 0.5 )
-			self.tm5 = timer.performWithDelay( 1500, enemyFire )
-		end
-		-- update beam position
-		local function beamUpdate ()
-			if self._BEAM then
-				self._BEAM.x = self.x
-				self._BEAM.y = self.y + self.height / 2
-			end
-		end
-		-- ray cast periodically
-		local function repeatedRayCast ()
-			if ( self._BEAM and self._BEAM.beamActive and not PlayerStats.recovering ) then
-				x1, y1 = self.x, self.y + self.height / 2
-				if beamRight then
-					x2 = x1 + x3
-				else
-					x2 = x1 - x3
-				end
-				y2 = y1 + y3
-				local castResults = physics.rayCast( x1, y1, x2, y2, "unsorted" )
-				local a = WasPlayerHit(castResults)
-				if a == true then
-					playerHit()
-				end
-			end
-		end
-		-- Call enemy behaviours
-		local newFireTime = 10000 - self.stats.fireRate * 100
-		print("Laser will begin every: ", newFireTime)
-		local newParticleTime = 5000 - self.stats.particleSpeed * 50
-		local myClosure1 = function() return moveEnemy () end
-		self.tm1 = timer.performWithDelay( math.random( 4000, 6000 ), myClosure1, 0 )
-		local myClosure2 = function() return warnPlayer () end
-		self.tm2 = timer.performWithDelay( newFireTime, myClosure2, 0 )
-		local myClosure3 = function() return enemyUpdate ( self ) end
-		self.tm3 = timer.performWithDelay( 250, myClosure3, 0 )
-		local myClosure4 = function() return beamUpdate () end
-		self.tm4 = timer.performWithDelay( 25, myClosure4, 0 )
-		self.tm7 = timer.performWithDelay( 200, repeatedRayCast, 0 )
-		local statTotal = 0
-		return self
-	end
-
-	---------------------------------------------------------------------- FRIGATE
-	function EnemyClass.newFrigate()
-		local self = setmetatable({}, EnemyClass)
-		enemyCount = enemyCount + 1
-		self = display.newImage ( sceneGroup, "Images/enemy3.png" )
-		mainGroup:insert( self )
-		physics.addBody( self, "dynamic" )
-		self.isFixedRotation = true
-		self.myName = "enemy"
-		self.stats = {} -- Had to declare these out here for scoping
-		self.stats.maxFireRate = 40
-		self.stats.maxBeamDuration = 40
-		self.stats.maxHealth = 15
-		self.stats.health = 0
-		self.stats.fireRate = 0
-		self.stats.beamDuration = 0
-		self.stats.particleSpeed = 0
-		self.stats.maxParticleSpeed = 40
-		self.tm1 = false
-		self.tm2 = false
-		self.tm3 = false
-		self.tm4 = false
-		self.tm5 = false
-		self.tm6 = false
-		self.worth =  PlayerStats.score / 10
-		if self.worth < 3 then self.worth = 3 end
-		-- Let's spawn on a random side
-		local randomSide = math.random( 1, 3 ) -- 1 is west, 2 is north, 3 is east
-		if (randomSide == 1) then
-			self.x = -50
-			self.y = math.random( -50, display.contentHeight / 2 )
-		elseif (randomSide == 2) then
-			self.x = math.random( -50, display.contentWidth )
-			self.y = -50
-		else
-			self.x = display.contentWidth + 50
-			self.y = math.random( -50, display.contentHeight / 2 )
-		end
-		-- Assign random stats to enemy
-		local statTotal = 0
-		repeat
-			-- Make sure there is at least one point in everything
-			local rand = math.random( 1, 4 )
-			statTotal = statTotal + rand
-			if self.stats.health == 0 then
-				self.stats.health = rand
-			elseif self.stats.fireRate == 0 then
-				self.stats.fireRate = rand
-			elseif self.stats.beamDuration == 0 then
-				self.stats.beamDuration = rand
-			elseif self.stats.particleSpeed == 0 then
-				self.stats.particleSpeed = rand
-			else
-				-- Randomly dish out remaining points
-				local rand2 = 0
-				local rand2 = math.random( 1, 3 )
-				if (rand2 == 1 and self.stats.health < self.stats.maxHealth - 3) then
-					self.stats.health = self.stats.health + rand
-				elseif (rand2 == 2 and self.stats.fireRate < self.stats.maxFireRate - 3) then
-					self.stats.fireRate = self.stats.fireRate + rand
-				elseif (rand2 == 3 and
-				self.stats.beamDuration < self.stats.maxBeamDuration - 3) then
-					self.stats.beamDuration = self.stats.beamDuration + rand
-				elseif (rand2 == 4 and
-				self.stats.particleSpeed < self.stats.maxParticleSpeed - 3) then
-					self.stats.particleSpeed = self.stats.particleSpeed + rand
-				else
-					print("There has been an error")
-				end
-			end
-		until (statTotal > self.worth)
-		self.stats.beamDuration = self.stats.beamDuration * 50 + 1000
-		print("Health: ", self.stats.health, "\nFire rate is: ", self.stats.fireRate,
-		"\nParticle speed is: ", self.stats.beamDuration)
-		self._BEAM = nil
-		-- Move function
-		local function moveEnemy( enemy )
-			local randX, randY = math.random( -100, 100 ), math.random( -100, 100 )
-			self:setLinearVelocity( randX, randY )
-		end
-		-- Smooth out movement and keep on screen
-		local function enemyUpdate ( enemy )
-			local xVel, yVel = enemy:getLinearVelocity()
-			-- shepherd back onto the screen
-			if (enemy.x < 100 and xVel <= 0) then
-				xVel = math.random( 25, 100 )
-			end
-			if (enemy.x > display.contentWidth - 100 and xVel >= 0) then
-				xVel = -(math.random( 25, 100 ))
-			end
-			if (enemy.y < 100 and yVel <= 0) then
-				yVel = math.random( 25, 100 )
-			end
-			if (enemy.y > display.contentHeight / 2 and yVel >= 0) then
-				yVel = -(math.random( 25, 100 ))
-			end
-			-- Slow down and look natural
-			if xVel > 0 then xVel = xVel - 1 end
-			if xVel < 0 then xVel = xVel + 1 end
-			if yVel > 0 then yVel = yVel - 1 end
-			if yVel < 0 then yVel = yVel + 1 end
-			enemy:setLinearVelocity( xVel, yVel )
+			self.x, self.y ) end
+			self.tm2 = timer.performWithDelay( newFireTime, myClosure2, 0 )
+			local myClosure3 = function() return enemyUpdate ( self ) end
+			self.tm3 = timer.performWithDelay( 250, myClosure3, 0 )
+			local statTotal = 0
+			return self
 		end
 
-		-- update beam position
-		local function beamUpdate ()
-			if self._BEAM then
-				self._BEAM.x = self.x
-				self._BEAM.y = self.y + self.height / 4
-			end
-		end
-
-		-- Call enemy behaviours
-		local newFireTime = 10000 - self.stats.fireRate * 100 -- for the beam
-		local newFireTime2 = 5000 - self.stats.fireRate * 100 -- for the bullets
-		local newParticleTime = 5000 - self.stats.particleSpeed * 50
-		print("Laser will begin every: ", newFireTime)
-		local myClosure1 = function() return moveEnemy () end
-		self.tm1 = timer.performWithDelay( math.random( 4000, 6000 ), myClosure1, 0 )
-		local myClosure2 = function() return EnemyClass.warnPlayer ( self ) end
-		self.tm2 = timer.performWithDelay( newFireTime, myClosure2, 0 )
-		local myClosure3 = function() return enemyUpdate ( self ) end
-		self.tm3 = timer.performWithDelay( 250, myClosure3, 0 )
-		local myClosure4 = function() return beamUpdate () end
-		self.tm4 = timer.performWithDelay( 25, myClosure4, 0 )
-		local myClosure5 = function() return EnemyClass.enemyFire ( self, newParticleTime,
- 		self.x, self.y ) end
-		self.tm5 = timer.performWithDelay( newFireTime2, myClosure5, 0 )
-		local statTotal = 0
-		return self
-	end
-
-	----------------------------------------------------------------------- RUNNER
-	function EnemyClass.newRunner()
-		local self = setmetatable({}, EnemyClass)
-		enemyCount = enemyCount + 1
-		self = display.newSprite ( sceneGroup, enemy4Sheet, shipModule.enemy4Sequence )
-		mainGroup:insert( self )
-		self:setSequence("normal")
-		self:play()
-		physics.addBody( self, "dynamic" )
-		self.isFixedRotation = true
-		self.myName = "enemy"
-		self.stats = {} -- Had to declare these out here for scoping
-		self.stats.particleSpeed = 0
-		self.stats.maxParticleSpeed = 40
-		self.stats.maxBullets = 10
-		self.stats.bullets = 0
-		self.stats.speed = 0
-		self.stats.maxSpeed = 40
-		self.stats.health = 1
-		self.destroyed = false
-		self.tm1 = false
-		self.worth =  PlayerStats.score / 10
-		if self.worth < 3 then self.worth = 3 end
-		-- Let's spawn on a random side
-		local randomSide = math.random( 1, 2 ) -- 1 is west, 2 is east
-		if (randomSide == 1) then
-			self.x = -50
-			self.y = math.random( -50, display.contentHeight / 2 )
-		elseif (randomSide == 2) then
-			self.x = display.contentWidth + 50
-			self.y = math.random( -50, display.contentHeight / 2 )
-		end
-		-- Assign random stats to enemy
-		local statTotal = 0
-		repeat
-			-- Make sure there is at least one point in everything
-			local rand = math.random( 1, 3 )
-			statTotal = statTotal + rand
-			if self.stats.particleSpeed == 0 then
-				self.stats.particleSpeed = rand
-			elseif self.stats.bullets == 0 then
-				self.stats.bullets = rand
-			elseif self.stats.speed == 0 then
-				self.stats.speed = rand
-			else
-				-- Randomly dish out remaining points
-				local rand2 = 0
-				local rand2 = math.random( 1, 2 )
-				if (rand2 == 1 and self.stats.bullets < self.stats.maxBullets) then
-					self.stats.bullets = self.stats.bullets + 1
-				elseif (rand2 == 2 and
-				self.stats.particleSpeed < self.stats.maxParticleSpeed - 3) then
-					self.stats.particleSpeed = self.stats.particleSpeed + rand
-				elseif (rand2 == 3 and
-				self.stats.speed < self.stats.maxSpeed - 3) then
-					self.stats.speed = self.stats.speed + rand
-				else
-					print("There has been an error")
-				end
-			end
-		until (statTotal > self.worth)
-		print("Health: ", self.stats.health, "\nBullet amount is: ", self.stats.bullets,
-		"\nParticle speed is: ", self.stats.particleSpeed)
-		-- Move function
-		self.stats.speed = 5000 - self.stats.speed * 50
-		local function moveEnemy()
-			local moveToX
-			if randomSide == 1 then
-				moveToX = math.random( display.contentWidth / 2, display.contentWidth )
-			elseif randomSide == 2 then
-				moveToX = -(math.random( display.contentWidth / 2, display.contentWidth ))
-			end
+		-- -------------------------------------------------------------------- DESTROYER
+		function EnemyClass.newDestroyer()
+			local self = setmetatable({}, EnemyClass)
+			enemyCount = enemyCount + 1
+			self = display.newImage ( sceneGroup, "Images/enemy2.png" )
+			mainGroup:insert( self )
+			physics.addBody( self, "dynamic" )
 			self.isFixedRotation = true
-			local oppVar = moveToX
-			local adjVar = -50 - self.y
-			self.rotation = -((math.atan( oppVar / adjVar )) * 180 / math.pi)
-			transition.to( self, { y= -50, x = moveToX, time=self.stats.speed,
-			onComplete = function()
-				if not self.destroyed then
-					enemyCount = enemyCount - 1
-					self:removeSelf()
-				end
-			end} )
-		end
-		local newParticleTime = 5000 - self.stats.particleSpeed * 50
-		-- Call enemy behaviours
-		moveEnemy()
-		local myClosure = function() return EnemyClass.runnerFire ( self, newParticleTime,
- 		self.x, self.y, false, randomSide ) end
-		self.tm5 = timer.performWithDelay( 1000, myClosure, 3 )
-		local statTotal = 0
-		return self
-	end
-
-	-- new bg fade in
-	local function fadeInBg ( bgNum )
-		print("Made it to the fade in!")
-		lastX = bg1.x
-		lastY = bg1.y
-		bg1 = createBg( bgNum, lastX, lastY )
-		lastX = bg2.x
-		lastY = bg2.y
-		bg2 = createBg( bgNum, lastX, lastY )
-		lastX = bg3.x
-		lastY = bg3.y
-		bg3 = createBg( bgNum, lastX, lastY )
-		lastX = bg4.x
-		lastY = bg4.y
-		bg4 = createBg( bgNum, lastX, lastY )
-		lastX = bg5.x
-		lastY = bg5.y
-		bg5 = createBg( bgNum, lastX, lastY )
-		lastX = bg6.x
-		lastY = bg6.y
-		bg6 = createBg( bgNum, lastX, lastY )
-		transition.fadeOut( bg1, { time=2000 } )
-		transition.fadeIn( bg2, { time=2000 } )
-		transition.fadeIn( bg3, { time=2000 } )
-		transition.fadeIn( bg4, { time=2000 } )
-		transition.fadeIn( bg5, { time=2000 } )
-		transition.fadeIn( bg6, { time=2000 } )
-	end
-
-	-- old background fade out and pass value
-	local function fadeOutBg ( bgNum )
-		print(bgNum, currentBg)
-		if (bgNum ~= currentBg) then
-			print("Made it inside the fade out if statement")
-			transition.fadeOut( bg1,{ time=2000 } )
-			transition.fadeOut( bg2,{ time=2000 } )
-			transition.fadeOut( bg3,{ time=2000 } )
-			transition.fadeOut( bg4,{ time=2000 } )
-			transition.fadeOut( bg5,{ time=2000 } )
-			transition.fadeOut( bg6,{ time=2000 } )
-			currentBg = bgNum
-			timer.performWithDelay( 2000, fadeInBg( bgNum ))
-		elseif bgNum == currentBg then
-			print("Still on current 'stage'")
-		end
-	end
-
-	local function spawnEnemies ( randShip, amountofEnemies )
-		for i = 1, amountofEnemies do
-			local rngNum = math.random( 1, randShip )
-			if rngNum == 1 then
-				EnemyClass.newBomber()
-			elseif rngNum == 2 then
-				EnemyClass.newRunner()
-			elseif rngNum == 3 then
-				EnemyClass.newDestroyer()
-			elseif rngNum == 4 then
-				EnemyClass.newFrigate()
+			self.myName = "enemy"
+			self.stats = {} -- Had to declare these out here for scoping
+			self.stats.maxFireRate = 40
+			self.stats.maxParticleSpeed = 40
+			self.stats.maxHealth = 15
+			self.stats.health = 0
+			self.stats.fireRate = 0
+			self.stats.particleSpeed = 0
+			self.tm1 = false
+			self.tm2 = false
+			self.tm3 = false
+			self.tm4 = false
+			self.tm5 = false
+			self.tm6 = false
+			self.tm7 = false
+			self.worth =  PlayerStats.score / 10
+			-- Let's spawn on a random side
+			local randomSide = math.random( 1, 3 ) -- 1 is west, 2 is north, 3 is east
+			if (randomSide == 1) then
+				self.x = -50
+				self.y = math.random( -50, display.contentHeight / 2 )
+			elseif (randomSide == 2) then
+				self.x = math.random( -50, display.contentWidth )
+				self.y = -50
 			else
-				print("An error has occured")
+				self.x = display.contentWidth + 50
+				self.y = math.random( -50, display.contentHeight / 2 )
 			end
-		end
-	end
-
-EnemyClass.newFrigate()
-EnemyClass.newFrigate()
-EnemyClass.newFrigate()
-
-	local function gameLoop ()
-		if enemyCount <= 0 then
-			if PlayerStats.score <= 30 then
-				EnemyClass.newBomber() -- no need to even call the function
-				elseif PlayerStats.score > 30 and PlayerStats.score <= 100 then
-					spawnEnemies( 2, 2 ) -- possible ships to spawn, amount of ships
-					fadeOutBg( 2 )
-					print("Printing")
-				elseif PlayerStats.score > 100 and PlayerStats.score <= 200 then
-					spawnEnemies( 3, 2 )
-					fadeOutBg( 3 )
-				elseif PlayerStats.score > 200 and PlayerStats.score <= 300 then
-					spawnEnemies( 3, 3 )
-					fadeOutBg( 4 )
-				elseif PlayerStats.score > 300 and PlayerStats.score <= 500 then
-					spawnEnemies( 4, 3 )
-					--fadeOutBg( 4 )
-				elseif PlayerStats.score > 500 and PlayerStats.score <= 700 then
-					spawnEnemies( 4, 4 )
-					--fadeOutBg( 4 )
-				elseif PlayerStats.score > 700 and PlayerStats.score <= 1000 then
-					spawnEnemies( 4, 5 )
-					--fadeOutBg( 4 )
-				elseif PlayerStats.score > 1000 then
-					spawnEnemies( 4, 6 )
-					--fadeOutBg( 4 )
-				end
-			end
-		end
-		local gameTimer = timer.performWithDelay( 6000, gameLoop, 0 )
-
-		local function pointsforTimeLoop ()
-			print("10 seconds has passed")
-			PlayerStats.score = PlayerStats.score + 1
-			updateScore()
-		end
-		local survivalPointsTimer = timer.performWithDelay( 10000, pointsforTimeLoop, 0)
-
-		-- update ammo supply
-		local function updateAmmo ()
-			for i = PlayerStats.maxAmmo, PlayerStats.minAmmo + 1, -1 do
-				if (i <= PlayerStats.currentAmmo) then
-					ammoBarTable[i].alpha = 1
+			-- Assign random stats to enemy
+			local statTotal = 0
+			if self.worth < 3 then self.worth = 3 end
+			repeat
+				-- Make sure there is at least one point in everything
+				local rand = math.random( 1, 3 )
+				statTotal = statTotal + rand
+				if self.stats.health == 0 then
+					self.stats.health = rand
+				elseif self.stats.fireRate == 0 then
+					self.stats.fireRate = rand
+				elseif self.stats.particleSpeed == 0 then
+					self.stats.particleSpeed = rand
 				else
-					ammoBarTable[i].alpha = 0.25
-				end
-			end
-		end
-
-		local function fireMain() 																		-- Fire main weapons
-			if PlayerStats.bulletReady then
-				local newLaser = display.newSprite( sceneGroup, bullet2Sheet,
-				bulletModule.bullet2Sequence )
-				-- Add sprite listener
-				newLaser:setSequence("normal")
-				newLaser:play()
-				physics.addBody( newLaser, "dynamic", { isSensor=true } )
-				newLaser.isBullet = true
-				newLaser.myName = "allyBullet"
-				newLaser.x = playerSprite.x
-				newLaser.y = playerSprite.y
-				mainGroup:insert(newLaser)
-				newLaser:toBack()
-				transition.to( newLaser, { y=-40, time=500,
-				onComplete = function() display.remove( newLaser ) end} )
-				PlayerStats.bulletReady = false
-				PlayerStats.currentAmmo = PlayerStats.currentAmmo - 1
-				updateAmmo()
-			end
-		end
-
-		local function rechargeAmmo ()
-			if (PlayerStats.currentAmmo < PlayerStats.maxAmmo) then
-				PlayerStats.currentAmmo = PlayerStats.currentAmmo + 1
-			end
-			updateAmmo()
-		end
-		timer.performWithDelay( PlayerStats.rechargeRate, rechargeAmmo, 0 )
-
-		local function playerFireTimer ()
-			PlayerStats.bulletReady = true
-			fireTimer = nil
-			print("Refreshed the bullet")
-		end
-
-		-- adjust global speeds
-		local function bgUpdate ()
-			-- Backgrounds leave the screen southbound (north bound not possible)
-			-- 6 2 4
-			-- 5 1 3
-			if (bg1.y > display.contentHeight * 2) then -- if bg1 leaves the screen on the
-				bg1.y = bg2.y - bg2.height						-- y axis, it moves up and takes it's
-				bg3.y = bg4.y - bg4.height						-- comrades with it
-				bg5.y = bg6.y - bg6.height
-			end
-			if (bg2.y > display.contentHeight * 2) then	-- same thing, next row
-				bg2.y = bg1.y - bg1.height
-				bg4.y = bg3.y - bg3.height
-				bg6.y = bg5.y - bg5.height
-			end
-
-			-- yikes, this part is more complicated. Here we go boys.
-			if (bg1.x > display.contentWidth * 2) then
-				bg1.x = bg3.x - bg3.width
-				bg2.x = bg4.x - bg4.width
-			end
-			if (bg3.x > display.contentWidth * 2) then
-				bg3.x = bg5.x - bg5.width
-				bg4.x = bg6.x - bg6.width
-			end
-			if (bg5.x > display.contentWidth * 2) then
-				bg5.x = bg1.x - bg1.width
-				bg6.x = bg2.x - bg2.width
-			end
-
-			if (bg1.x < -(display.contentWidth * 2)) then
-				bg1.x = bg3.x + bg3.width
-				bg2.x = bg4.x + bg4.width
-			end
-			if (bg3.x < -(display.contentWidth * 2)) then
-				bg3.x = bg5.x + bg5.width
-				bg4.x = bg6.x + bg6.width
-			end
-			if (bg5.x < -(display.contentWidth * 2)) then
-				bg5.x = bg1.x + bg1.width
-				bg6.x = bg2.x + bg2.width
-			end
-			bg1:translate( -(PlayerSpeed.xSpeed / 20), PlayerSpeed.ySpeed / 5)
-			bg2:translate( -(PlayerSpeed.xSpeed / 20), PlayerSpeed.ySpeed / 5)
-			bg3:translate( -(PlayerSpeed.xSpeed / 20), PlayerSpeed.ySpeed / 5)
-			bg4:translate( -(PlayerSpeed.xSpeed / 20), PlayerSpeed.ySpeed / 5)
-			bg5:translate( -(PlayerSpeed.xSpeed / 20), PlayerSpeed.ySpeed / 5)
-			bg6:translate( -(PlayerSpeed.xSpeed / 20), PlayerSpeed.ySpeed / 5)
-			-- auto slow down moved to here so it slows down when you die and no longer
-			-- have controls
-			if (PlayerSpeed.xSpeed < 0 and not aDown and not dDown) then
-				PlayerSpeed.xSpeed = PlayerSpeed.xSpeed + PlayerSpeed.xIncrement / 2
-			elseif (PlayerSpeed.xSpeed > 0 and not aDown and not dDown) then
-				PlayerSpeed.xSpeed = PlayerSpeed.xSpeed - PlayerSpeed.xIncrement / 2
-			end
-			--[[
-			if (PlayerSpeed.ySpeed > 0 and not wDown and not sDown) then
-				PlayerSpeed.ySpeed = PlayerSpeed.ySpeed - PlayerSpeed.yIncrement / 4
-			end
-			--]]
-			-- trigger boundaries
-			if ( playerSprite.x ) then
-				if (playerSprite.x < 250) then
-					boundaryLeft.alpha = 0.75
-				elseif (playerSprite.x > display.contentWidth - 250) then
-					boundaryRight.alpha = 0.75
-				else
-					boundaryLeft.alpha = 0
-					boundaryRight.alpha = 0
-				end
-			end
-		end
-
-		local function keyUpdate ()																										-- WASD function
-			if playerSprite.x then
-				if (wDown and PlayerSpeed.ySpeed < PlayerSpeed.yMax) then 									-- W key down
-					PlayerSpeed.ySpeed = PlayerSpeed.ySpeed + PlayerSpeed.yIncrement
-				end
-				if (sDown and PlayerSpeed.ySpeed > PlayerSpeed.yMin) then 									-- S key down
-					PlayerSpeed.ySpeed = PlayerSpeed.ySpeed - PlayerSpeed.yIncrement
-				end
-				if (aDown and PlayerSpeed.xSpeed > PlayerSpeed.xMin) then										-- A key down
-					PlayerSpeed.xSpeed = PlayerSpeed.xSpeed - PlayerSpeed.xIncrement
-				end
-				if (dDown and PlayerSpeed.xSpeed < PlayerSpeed.xMax) then										-- D key down
-					PlayerSpeed.xSpeed = PlayerSpeed.xSpeed + PlayerSpeed.xIncrement
-				end
-				if (spaceDown and PlayerStats.currentAmmo > 0) then
-					fireMain()
-					if not fireTimer then
-						fireTimer = timer.performWithDelay ( PlayerStats.fireRate, playerFireTimer )
+					-- Randomly dish out remaining points
+					local rand2 = 0
+					local rand2 = math.random( 1, 3 )
+					if (rand2 == 1 and self.stats.health < self.stats.maxHealth - 3) then
+						self.stats.health = self.stats.health + rand
+					elseif (rand2 == 2 and self.stats.fireRate < self.stats.maxFireRate - 3) then
+						self.stats.fireRate = self.stats.fireRate + rand
+					elseif (rand2 == 3 and
+					self.stats.particleSpeed < self.stats.maxParticleSpeed - 3) then
+						self.stats.particleSpeed = self.stats.particleSpeed + rand
+					else
+						print("There has been an error")
 					end
 				end
-				-- play animations
-				if (PlayerSpeed.xSpeed == 0) then
-					playerSprite:setFrame(1)
-				elseif (PlayerSpeed.xSpeed < 0 and PlayerSpeed.xSpeed > (PlayerSpeed.xMin / 2)) then
-					playerSprite:setFrame(2)
-				elseif (PlayerSpeed.xSpeed < (PlayerSpeed.xMin / 2)) then
-					playerSprite:setFrame(3)
-				elseif (PlayerSpeed.xSpeed > 0 and PlayerSpeed.xSpeed < (PlayerSpeed.xMax / 2)) then
-					playerSprite:setFrame(4)
-				elseif (PlayerSpeed.xSpeed > (PlayerSpeed.xMax / 2)) then
-					playerSprite:setFrame(5)
+			until (statTotal > self.worth)
+			print("Health: ", self.stats.health, "\nFire rate is: ", self.stats.fireRate,
+			"\nParticle speed is: ", self.stats.particleSpeed)
+			-- create "beam"
+			self._BEAM = nil
+			local x1, y1, x2, y2, x3, y3, beamRight
+			local function newBeam()
+				local obj = nil
+				local function getBeamEnd ( startX )
+					return math.random(startX - 1000, startX + 1000), display.contentHeight + 1000
 				end
-				-- Preventing a bug where PlayerSpeed went below zero
-				if (PlayerSpeed.ySpeed < 0 ) then
-					PlayerSpeed.ySpeed = 0
+				x1, y1 = self.x, self.y + self.height / 2
+				x2, y2 = getBeamEnd(self.x)
+				if x1 > x2 then
+					beamRight = false
+				else
+					beamRight = true
 				end
-				playerSprite:setLinearVelocity(PlayerSpeed.xSpeed, 0)
+				x3, y3 = math.abs( x1 - x2 ), math.abs( y1 - y2 )
+				obj = display.newLine( sceneGroup, x1, y1, x2, y2 )
+				obj:setStrokeColor( 1, 0, 0, 0 )
+				obj.strokeWidth = 4
+				mainGroup:insert(obj)
+				obj:toBack()
+				physics.addBody( obj, "dynamic", { isSensor=true } )
+				obj.isBullet = true
+				obj.beamActive = false
+				obj.myName = "enemyLaser"
+				return obj
 			end
-		end
-
-		-- collision event
-		local function onCollision( event )
-			if ( event.phase == "began" ) then
-
-				local obj1 = event.object1
-				local obj2 = event.object2
-
-				-- collisions with enemy lasers
-				if ( obj1.myName == "enemyLaser" and obj2.myName == "player" ) then
-					if (PlayerStats.recovering == false and obj1.beamActive == true ) then
-						playerHit()
+			self._BEAM = newBeam()
+			-- Move function
+			local function moveEnemy( enemy )
+				local randX, randY = math.random( -100, 100 ), math.random( -100, 100 )
+				self:setLinearVelocity( randX, randY )
+			end
+			-- Smooth out movement and keep on screen
+			local function enemyUpdate ( enemy )
+				local xVel, yVel = enemy:getLinearVelocity()
+				-- shepherd back onto the screen
+				if (enemy.x < 100 and xVel <= 0) then
+					xVel = math.random( 25, 100 )
+				end
+				if (enemy.x > display.contentWidth - 100 and xVel >= 0) then
+					xVel = -(math.random( 25, 100 ))
+				end
+				if (enemy.y < 100 and yVel <= 0) then
+					yVel = math.random( 25, 100 )
+				end
+				if (enemy.y > display.contentHeight / 2 and yVel >= 0) then
+					yVel = -(math.random( 25, 100 ))
+				end
+				-- Slow down and look natural
+				if xVel > 0 then xVel = xVel - 1 end
+				if xVel < 0 then xVel = xVel + 1 end
+				if yVel > 0 then yVel = yVel - 1 end
+				if yVel < 0 then yVel = yVel + 1 end
+				enemy:setLinearVelocity( xVel, yVel )
+			end
+			-- cease fire
+			local function stopFiring ()
+				self._BEAM.beamActive = false
+				self._BEAM.strokeWidth = 4
+				self._BEAM:setStrokeColor( 1, 0, 0, 0 )
+				self._BEAM = newBeam()
+			end
+			-- Attack function
+			local function enemyFire ()
+				self._BEAM.beamActive = true
+				self._BEAM.strokeWidth = 10
+				self._BEAM:setStrokeColor( 1, 0, 0, 1 )
+				self.tm6 = timer.performWithDelay( 1500, stopFiring )
+			end
+			-- warn player
+			local function warnPlayer ()
+				self._BEAM:setStrokeColor( 1, 0, 0, 0.5 )
+				self.tm5 = timer.performWithDelay( 1500, enemyFire )
+			end
+			-- update beam position
+			local function beamUpdate ()
+				if self._BEAM then
+					self._BEAM.x = self.x
+					self._BEAM.y = self.y + self.height / 2
+				end
+			end
+			-- ray cast periodically
+			local function repeatedRayCast ()
+				if ( self._BEAM and self._BEAM.beamActive and not PlayerStats.recovering ) then
+					x1, y1 = self.x, self.y + self.height / 2
+					if beamRight then
+						x2 = x1 + x3
+					else
+						x2 = x1 - x3
 					end
-				elseif ( obj1.myName == "player" and obj2.myName == "enemyLaser" ) then
-					if (PlayerStats.recovering == false and obj2.beamActive == true) then
+					y2 = y1 + y3
+					local castResults = physics.rayCast( x1, y1, x2, y2, "unsorted" )
+					local a = WasPlayerHit(castResults)
+					if a == true then
 						playerHit()
 					end
 				end
+			end
+			-- Call enemy behaviours
+			local newFireTime = 10000 - self.stats.fireRate * 100
+			print("Laser will begin every: ", newFireTime)
+			local newParticleTime = 5000 - self.stats.particleSpeed * 50
+			local myClosure1 = function() return moveEnemy () end
+			self.tm1 = timer.performWithDelay( math.random( 4000, 6000 ), myClosure1, 0 )
+			local myClosure2 = function() return warnPlayer () end
+			self.tm2 = timer.performWithDelay( newFireTime, myClosure2, 0 )
+			local myClosure3 = function() return enemyUpdate ( self ) end
+			self.tm3 = timer.performWithDelay( 250, myClosure3, 0 )
+			local myClosure4 = function() return beamUpdate () end
+			self.tm4 = timer.performWithDelay( 25, myClosure4, 0 )
+			self.tm7 = timer.performWithDelay( 200, repeatedRayCast, 0 )
+			local statTotal = 0
+			return self
+		end
 
-				-- colliding with regular bullets
-				if ( obj1.myName == "enemyBullet" and obj2.myName == "player" ) then
-					if PlayerStats.recovering == false then
+		---------------------------------------------------------------------- FRIGATE
+
+		-- deleted
+
+		----------------------------------------------------------------------- RUNNER
+		function EnemyClass.newRunner()
+			local self = setmetatable({}, EnemyClass)
+			enemyCount = enemyCount + 1
+			self = display.newSprite ( sceneGroup, enemy4Sheet, shipModule.enemy4Sequence )
+			mainGroup:insert( self )
+			self:setSequence("normal")
+			self:play()
+			physics.addBody( self, "dynamic" )
+			self.isFixedRotation = true
+			self.myName = "enemy"
+			self.stats = {} -- Had to declare these out here for scoping
+			self.stats.particleSpeed = 0
+			self.stats.maxParticleSpeed = 40
+			self.stats.maxBullets = 10
+			self.stats.bullets = 0
+			self.stats.speed = 0
+			self.stats.maxSpeed = 40
+			self.stats.health = 1
+			self.destroyed = false
+			self.tm1 = false
+			self.worth =  PlayerStats.score / 10
+			if self.worth < 3 then self.worth = 3 end
+			-- Let's spawn on a random side
+			local randomSide = math.random( 1, 2 ) -- 1 is west, 2 is east
+			if (randomSide == 1) then
+				self.x = -50
+				self.y = math.random( -50, display.contentHeight / 2 )
+			elseif (randomSide == 2) then
+				self.x = display.contentWidth + 50
+				self.y = math.random( -50, display.contentHeight / 2 )
+			end
+			-- Assign random stats to enemy
+			local statTotal = 0
+			repeat
+				-- Make sure there is at least one point in everything
+				local rand = math.random( 1, 3 )
+				statTotal = statTotal + rand
+				if self.stats.particleSpeed == 0 then
+					self.stats.particleSpeed = rand
+				elseif self.stats.bullets == 0 then
+					self.stats.bullets = rand
+				elseif self.stats.speed == 0 then
+					self.stats.speed = rand
+				else
+					-- Randomly dish out remaining points
+					local rand2 = 0
+					local rand2 = math.random( 1, 2 )
+					if (rand2 == 1 and self.stats.bullets < self.stats.maxBullets) then
+						self.stats.bullets = self.stats.bullets + 1
+					elseif (rand2 == 2 and
+					self.stats.particleSpeed < self.stats.maxParticleSpeed - 3) then
+						self.stats.particleSpeed = self.stats.particleSpeed + rand
+					elseif (rand2 == 3 and
+					self.stats.speed < self.stats.maxSpeed - 3) then
+						self.stats.speed = self.stats.speed + rand
+					else
+						print("There has been an error")
+					end
+				end
+			until (statTotal > self.worth)
+			print("Health: ", self.stats.health, "\nBullet amount is: ", self.stats.bullets,
+			"\nParticle speed is: ", self.stats.particleSpeed)
+			-- Move function
+			self.stats.speed = 5000 - self.stats.speed * 50
+			local function moveEnemy()
+				local moveToX
+				if randomSide == 1 then
+					moveToX = math.random( display.contentWidth / 2, display.contentWidth )
+				elseif randomSide == 2 then
+					moveToX = -(math.random( display.contentWidth / 2, display.contentWidth ))
+				end
+				self.isFixedRotation = true
+				local oppVar = moveToX
+				local adjVar = -50 - self.y
+				self.rotation = -((math.atan( oppVar / adjVar )) * 180 / math.pi)
+				transition.to( self, { y= -50, x = moveToX, time=self.stats.speed,
+				onComplete = function()
+					if not self.destroyed then
+						enemyCount = enemyCount - 1
+						self:removeSelf()
+					end
+				end} )
+			end
+			local newParticleTime = 5000 - self.stats.particleSpeed * 50
+			-- Call enemy behaviours
+			moveEnemy()
+			local myClosure = function() return EnemyClass.runnerFire ( self, newParticleTime,
+				self.x, self.y, false, randomSide ) end
+				self.tm5 = timer.performWithDelay( 1000, myClosure, 3 )
+				local statTotal = 0
+				return self
+			end
+
+			-- new bg fade in
+			local function fadeInBg ( bgNum )
+				lastX = bg1.x
+				lastY = bg1.y
+				bg1 = createBg( bgNum, lastX, lastY )
+				lastX = bg2.x
+				lastY = bg2.y
+				bg2 = createBg( bgNum, lastX, lastY )
+				lastX = bg3.x
+				lastY = bg3.y
+				bg3 = createBg( bgNum, lastX, lastY )
+				lastX = bg4.x
+				lastY = bg4.y
+				bg4 = createBg( bgNum, lastX, lastY )
+				lastX = bg5.x
+				lastY = bg5.y
+				bg5 = createBg( bgNum, lastX, lastY )
+				lastX = bg6.x
+				lastY = bg6.y
+				bg6 = createBg( bgNum, lastX, lastY )
+				deleteCover()
+			end
+
+			-- old background fade out and pass value
+			local function fadeOutBg ( bgNum )
+				if (bgNum ~= currentBg) then
+					currentBg = bgNum
+					createCover()
+					timer.performWithDelay( 2000, fadeInBg( bgNum ))
+				end
+			end
+
+			local function spawnEnemies ( randShip, amountofEnemies )
+				for i = 1, amountofEnemies do
+					local rngNum = math.random( 1, randShip )
+					if rngNum == 1 then
+						EnemyClass.newBomber()
+					elseif rngNum == 2 then
+						EnemyClass.newRunner()
+					elseif rngNum == 3 then
+						EnemyClass.newDestroyer()
+					elseif rngNum == 4 then
+						--EnemyClass.newFrigate()
+					else
+						print("An error has occured")
+					end
+				end
+			end
+
+			local function gameLoop ()
+				if enemyCount <= 0 then
+					if PlayerStats.score <= 30 then
+						EnemyClass.newBomber() -- no need to even call the function
+						elseif PlayerStats.score > 30 and PlayerStats.score <= 100 then
+							spawnEnemies( 2, 2 ) -- possible ships to spawn, amount of ships
+							fadeOutBg( 2 )
+						elseif PlayerStats.score > 100 and PlayerStats.score <= 200 then
+							spawnEnemies( 3, 2 )
+							fadeOutBg( 3 )
+						elseif PlayerStats.score > 200 and PlayerStats.score <= 300 then
+							spawnEnemies( 3, 3 )
+							fadeOutBg( 4 )
+						elseif PlayerStats.score > 300 and PlayerStats.score <= 500 then
+							spawnEnemies( 4, 3 )
+							--fadeOutBg( 4 )
+						elseif PlayerStats.score > 500 and PlayerStats.score <= 700 then
+							spawnEnemies( 4, 4 )
+							--fadeOutBg( 4 )
+						elseif PlayerStats.score > 700 and PlayerStats.score <= 1000 then
+							spawnEnemies( 4, 5 )
+							--fadeOutBg( 4 )
+						elseif PlayerStats.score > 1000 then
+							spawnEnemies( 4, 6 )
+							--fadeOutBg( 4 )
+						end
+					end
+				end
+				local gameTimer = timer.performWithDelay( 6000, gameLoop, 0 )
+
+				local function pointsforTimeLoop ()
+					print("10 seconds has passed")
+					PlayerStats.score = PlayerStats.score + 1
+					updateScore()
+				end
+				local survivalPointsTimer = timer.performWithDelay( 10000, pointsforTimeLoop, 0)
+
+				-- update ammo supply
+				local function updateAmmo ()
+					for i = PlayerStats.maxAmmo, PlayerStats.minAmmo + 1, -1 do
+						if (i <= PlayerStats.currentAmmo) then
+							ammoBarTable[i].alpha = 1
+						else
+							ammoBarTable[i].alpha = 0.25
+						end
+					end
+				end
+
+				local function fireMain() 																		-- Fire main weapons
+					if PlayerStats.bulletReady then
+						local newLaser = display.newSprite( sceneGroup, bullet2Sheet,
+						bulletModule.bullet2Sequence )
+						-- Add sprite listener
+						newLaser:setSequence("normal")
+						newLaser:play()
+						physics.addBody( newLaser, "dynamic", { isSensor=true } )
+						newLaser.isBullet = true
+						newLaser.myName = "allyBullet"
+						newLaser.x = playerSprite.x
+						newLaser.y = playerSprite.y
+						mainGroup:insert(newLaser)
+						newLaser:toBack()
+						transition.to( newLaser, { y=-40, time=500,
+						onComplete = function() display.remove( newLaser ) end} )
+						PlayerStats.bulletReady = false
+						PlayerStats.currentAmmo = PlayerStats.currentAmmo - 1
+						updateAmmo()
+					end
+				end
+
+				local function rechargeAmmo ()
+					if (PlayerStats.currentAmmo < PlayerStats.maxAmmo) then
+						PlayerStats.currentAmmo = PlayerStats.currentAmmo + 1
+					end
+					updateAmmo()
+				end
+				timer.performWithDelay( PlayerStats.rechargeRate, rechargeAmmo, 0 )
+
+				local function playerFireTimer ()
+					PlayerStats.bulletReady = true
+					fireTimer = nil
+					print("Refreshed the bullet")
+				end
+
+				-- adjust global speeds
+				local function bgUpdate ()
+					-- Backgrounds leave the screen southbound (north bound not possible)
+					-- 6 2 4
+					-- 5 1 3
+					if (bg1.y > display.contentHeight * 2) then -- if bg1 leaves the screen on the
+						bg1.y = bg2.y - bg2.height						-- y axis, it moves up and takes it's
+						bg3.y = bg4.y - bg4.height						-- comrades with it
+						bg5.y = bg6.y - bg6.height
+					end
+					if (bg2.y > display.contentHeight * 2) then	-- same thing, next row
+						bg2.y = bg1.y - bg1.height
+						bg4.y = bg3.y - bg3.height
+						bg6.y = bg5.y - bg5.height
+					end
+
+					-- yikes, this part is more complicated. Here we go boys.
+					if (bg1.x > display.contentWidth * 2) then
+						bg1.x = bg3.x - bg3.width
+						bg2.x = bg4.x - bg4.width
+					end
+					if (bg3.x > display.contentWidth * 2) then
+						bg3.x = bg5.x - bg5.width
+						bg4.x = bg6.x - bg6.width
+					end
+					if (bg5.x > display.contentWidth * 2) then
+						bg5.x = bg1.x - bg1.width
+						bg6.x = bg2.x - bg2.width
+					end
+
+					if (bg1.x < -(display.contentWidth * 2)) then
+						bg1.x = bg3.x + bg3.width
+						bg2.x = bg4.x + bg4.width
+					end
+					if (bg3.x < -(display.contentWidth * 2)) then
+						bg3.x = bg5.x + bg5.width
+						bg4.x = bg6.x + bg6.width
+					end
+					if (bg5.x < -(display.contentWidth * 2)) then
+						bg5.x = bg1.x + bg1.width
+						bg6.x = bg2.x + bg2.width
+					end
+					bg1:translate( -(PlayerSpeed.xSpeed / 20), PlayerSpeed.ySpeed / 5)
+					bg2:translate( -(PlayerSpeed.xSpeed / 20), PlayerSpeed.ySpeed / 5)
+					bg3:translate( -(PlayerSpeed.xSpeed / 20), PlayerSpeed.ySpeed / 5)
+					bg4:translate( -(PlayerSpeed.xSpeed / 20), PlayerSpeed.ySpeed / 5)
+					bg5:translate( -(PlayerSpeed.xSpeed / 20), PlayerSpeed.ySpeed / 5)
+					bg6:translate( -(PlayerSpeed.xSpeed / 20), PlayerSpeed.ySpeed / 5)
+					-- auto slow down moved to here so it slows down when you die and no longer
+					-- have controls
+					if (PlayerSpeed.xSpeed < 0 and not aDown and not dDown) then
+						PlayerSpeed.xSpeed = PlayerSpeed.xSpeed + PlayerSpeed.xIncrement / 2
+					elseif (PlayerSpeed.xSpeed > 0 and not aDown and not dDown) then
+						PlayerSpeed.xSpeed = PlayerSpeed.xSpeed - PlayerSpeed.xIncrement / 2
+					end
+					--[[
+					if (PlayerSpeed.ySpeed > 0 and not wDown and not sDown) then
+					PlayerSpeed.ySpeed = PlayerSpeed.ySpeed - PlayerSpeed.yIncrement / 4
+				end
+				--]]
+				-- trigger boundaries
+				if ( playerSprite.x ) then
+					if (playerSprite.x < 250) then
+						boundaryLeft.alpha = 0.75
+					elseif (playerSprite.x > display.contentWidth - 250) then
+						boundaryRight.alpha = 0.75
+					else
+						boundaryLeft.alpha = 0
+						boundaryRight.alpha = 0
+					end
+				end
+			end
+
+			local function keyUpdate ()																										-- WASD function
+				if playerSprite.x then
+					if (wDown and PlayerSpeed.ySpeed < PlayerSpeed.yMax) then 									-- W key down
+						PlayerSpeed.ySpeed = PlayerSpeed.ySpeed + PlayerSpeed.yIncrement
+					end
+					if (sDown and PlayerSpeed.ySpeed > PlayerSpeed.yMin) then 									-- S key down
+						PlayerSpeed.ySpeed = PlayerSpeed.ySpeed - PlayerSpeed.yIncrement
+					end
+					if (aDown and PlayerSpeed.xSpeed > PlayerSpeed.xMin) then										-- A key down
+						PlayerSpeed.xSpeed = PlayerSpeed.xSpeed - PlayerSpeed.xIncrement
+					end
+					if (dDown and PlayerSpeed.xSpeed < PlayerSpeed.xMax) then										-- D key down
+						PlayerSpeed.xSpeed = PlayerSpeed.xSpeed + PlayerSpeed.xIncrement
+					end
+					if (spaceDown and PlayerStats.currentAmmo > 0) then
+						fireMain()
+						if not fireTimer then
+							fireTimer = timer.performWithDelay ( PlayerStats.fireRate, playerFireTimer )
+						end
+					end
+					-- play animations
+					if (PlayerSpeed.xSpeed == 0) then
+						playerSprite:setFrame(1)
+					elseif (PlayerSpeed.xSpeed < 0 and PlayerSpeed.xSpeed > (PlayerSpeed.xMin / 2)) then
+						playerSprite:setFrame(2)
+					elseif (PlayerSpeed.xSpeed < (PlayerSpeed.xMin / 2)) then
+						playerSprite:setFrame(3)
+					elseif (PlayerSpeed.xSpeed > 0 and PlayerSpeed.xSpeed < (PlayerSpeed.xMax / 2)) then
+						playerSprite:setFrame(4)
+					elseif (PlayerSpeed.xSpeed > (PlayerSpeed.xMax / 2)) then
+						playerSprite:setFrame(5)
+					end
+					-- Preventing a bug where PlayerSpeed went below zero
+					if (PlayerSpeed.ySpeed < 0 ) then
+						PlayerSpeed.ySpeed = 0
+					end
+					playerSprite:setLinearVelocity(PlayerSpeed.xSpeed, 0)
+				end
+			end
+
+			-- collision event
+			local function onCollision( event )
+				if ( event.phase == "began" ) then
+
+					local obj1 = event.object1
+					local obj2 = event.object2
+
+					-- collisions with enemy lasers
+					if ( obj1.myName == "enemyLaser" and obj2.myName == "player" ) then
+						if (PlayerStats.recovering == false and obj1.beamActive == true ) then
+							playerHit()
+						end
+					elseif ( obj1.myName == "player" and obj2.myName == "enemyLaser" ) then
+						if (PlayerStats.recovering == false and obj2.beamActive == true) then
+							playerHit()
+						end
+					end
+
+					-- colliding with regular bullets
+					if ( obj1.myName == "enemyBullet" and obj2.myName == "player" ) then
+						if PlayerStats.recovering == false then
+							display.remove( obj1 )
+							playerHit()
+						end
+					elseif ( obj1.myName == "player" and obj2.myName == "enemyBullet" ) then
+						if PlayerStats.recovering == false then
+							display.remove( obj2 )
+							playerHit()
+						end
+					end
+
+					-- player bullets hitting enemies
+					if ( obj1.myName == "allyBullet" and obj2.myName == "enemy" ) then
 						display.remove( obj1 )
-						playerHit()
-					end
-				elseif ( obj1.myName == "player" and obj2.myName == "enemyBullet" ) then
-					if PlayerStats.recovering == false then
+						obj2.stats.health = obj2.stats.health - 10
+						if ( obj2.stats.health <= 0 ) then
+							obj2.destroyed = true
+							PlayerStats.score = math.floor(PlayerStats.score + obj2.worth)
+							updateScore()
+							enemyCount = enemyCount - 1
+							if obj2.tm1 then timer.cancel(obj2.tm1) end
+							if obj2.tm2 then timer.cancel(obj2.tm2) end
+							if obj2.tm3 then timer.cancel(obj2.tm3) end
+							if obj2.tm4 then timer.cancel(obj2.tm4) end
+							if obj2.tm5 then timer.cancel(obj2.tm5) end
+							if obj2.tm6 then timer.cancel(obj2.tm6) end
+							if obj2.tm7 then timer.cancel(obj2.tm7) end
+							explosionEffect( obj2.x, obj2.y )
+							display.remove(obj2._BEAM)
+							obj2:removeSelf()
+							obj2 = nil
+						end
+					elseif ( obj1.myName == "enemy" and obj2.myName == "allyBullet" ) then
 						display.remove( obj2 )
-						playerHit()
+						obj1.stats.health = obj1.stats.health - 10
+						if ( obj1.stats.health <= 0 ) then
+							obj1.destroyed = true
+							PlayerStats.score = math.floor(PlayerStats.score + obj1.worth)
+							updateScore()
+							enemyCount = enemyCount - 1
+							if obj1.tm1 then timer.cancel(obj1.tm1) end
+							if obj1.tm2 then timer.cancel(obj1.tm2) end
+							if obj1.tm3 then timer.cancel(obj1.tm3) end
+							if obj1.tm4 then timer.cancel(obj1.tm4) end
+							if obj1.tm5 then timer.cancel(obj1.tm5) end
+							if obj1.tm6 then timer.cancel(obj1.tm6) end
+							if obj1.tm7 then timer.cancel(obj1.tm7) end
+							explosionEffect( obj1.x, obj1.y )
+							display.remove(obj1._BEAM)
+							obj1:removeSelf()
+							obj1 = nil
+						end
 					end
-				end
 
-				-- player bullets hitting enemies
-				if ( obj1.myName == "allyBullet" and obj2.myName == "enemy" ) then
-					display.remove( obj1 )
-					obj2.stats.health = obj2.stats.health - 10
-					if ( obj2.stats.health <= 0 ) then
-						obj2.destroyed = true
-						PlayerStats.score = math.floor(PlayerStats.score + obj2.worth)
-						updateScore()
-						enemyCount = enemyCount - 1
-						if obj2.tm1 then timer.cancel(obj2.tm1) end
-						if obj2.tm2 then timer.cancel(obj2.tm2) end
-						if obj2.tm3 then timer.cancel(obj2.tm3) end
-						if obj2.tm4 then timer.cancel(obj2.tm4) end
-						if obj2.tm5 then timer.cancel(obj2.tm5) end
-						if obj2.tm6 then timer.cancel(obj2.tm6) end
-						if obj2.tm7 then timer.cancel(obj2.tm7) end
-						explosionEffect( obj2.x, obj2.y )
-						display.remove(obj2._BEAM)
-						obj2:removeSelf()
-						obj2 = nil
+				end
+			end
+
+			-- Keyboard events
+			local function onKeyEvent ( event )
+				-- Escape button (mostly for testing)
+				if (event.phase == "down" and event.keyName == "escape") then
+					print("Escape function was called")
+						native.requestExit()
 					end
-				elseif ( obj1.myName == "enemy" and obj2.myName == "allyBullet" ) then
-					display.remove( obj2 )
-					obj1.stats.health = obj1.stats.health - 10
-					if ( obj1.stats.health <= 0 ) then
-						obj1.destroyed = true
-						PlayerStats.score = math.floor(PlayerStats.score + obj1.worth)
-						updateScore()
-						enemyCount = enemyCount - 1
-						if obj1.tm1 then timer.cancel(obj1.tm1) end
-						if obj1.tm2 then timer.cancel(obj1.tm2) end
-						if obj1.tm3 then timer.cancel(obj1.tm3) end
-						if obj1.tm4 then timer.cancel(obj1.tm4) end
-						if obj1.tm5 then timer.cancel(obj1.tm5) end
-						if obj1.tm6 then timer.cancel(obj1.tm6) end
-						if obj1.tm7 then timer.cancel(obj1.tm7) end
-						explosionEffect( obj1.x, obj1.y )
-						display.remove(obj1._BEAM)
-						obj1:removeSelf()
-						obj1 = nil
+					-- W button
+					if (event.phase == "down" and event.keyName == "w") then
+						--wDown = true -- disabled
+						print(enemyCount)
 					end
+					if (event.phase == "up" and event.keyName == "w") then
+						--wDown = false
+					end
+					-- S button
+					if (event.phase == "down" and event.keyName == "s") then
+						--sDown = true -- disabled
+					end
+					if (event.phase == "up" and event.keyName == "s") then
+						--sDown = false
+					end
+					-- A button
+					if (event.phase == "down" and event.keyName == "a") then
+						aDown = true
+					end
+					if (event.phase == "up" and event.keyName == "a") then
+						aDown = false
+					end
+					-- D button
+					if (event.phase == "down" and event.keyName == "d") then
+						dDown = true
+					end
+					if (event.phase == "up" and event.keyName == "d") then
+						dDown = false
+					end
+					-- Space button
+					if (event.phase == "down" and event.keyName == "space") then
+						spaceDown = true
+					end
+					if (event.phase == "up" and event.keyName == "space") then
+						spaceDown = false
+					end
+					return false
 				end
+
+				-- Update function called every frame
+				local function frameListener( event )
+					bgUpdate()
+					keyUpdate()
+				end
+
+				-- Listeners
+				Runtime:addEventListener( "key", onKeyEvent )
+				Runtime:addEventListener( "enterFrame", frameListener )
+				Runtime:addEventListener( "collision", onCollision )
 
 			end
-		end
 
-		-- Keyboard events
-		local function onKeyEvent ( event )
-			-- Escape button (mostly for testing)
-			if (event.phase == "down" and event.keyName == "escape") then
-				print("Escape function was called")
-					native.requestExit()
+
+			-- show()
+			function scene:show( event )
+
+				local sceneGroup = self.view
+				local phase = event.phase
+
+				if ( phase == "will" ) then
+					-- Code here runs when the scene is still off screen (but is about to come on screen)
+
+				elseif ( phase == "did" ) then
+					-- Code here runs when the scene is entirely on screen
+
 				end
-				-- W button
-				if (event.phase == "down" and event.keyName == "w") then
-					--wDown = true -- disabled
-					print(enemyCount)
-				end
-				if (event.phase == "up" and event.keyName == "w") then
-					--wDown = false
-				end
-				-- S button
-				if (event.phase == "down" and event.keyName == "s") then
-					--sDown = true -- disabled
-				end
-				if (event.phase == "up" and event.keyName == "s") then
-					--sDown = false
-				end
-				-- A button
-				if (event.phase == "down" and event.keyName == "a") then
-					aDown = true
-				end
-				if (event.phase == "up" and event.keyName == "a") then
-					aDown = false
-				end
-				-- D button
-				if (event.phase == "down" and event.keyName == "d") then
-					dDown = true
-				end
-				if (event.phase == "up" and event.keyName == "d") then
-					dDown = false
-				end
-				-- Space button
-				if (event.phase == "down" and event.keyName == "space") then
-					spaceDown = true
-				end
-				if (event.phase == "up" and event.keyName == "space") then
-					spaceDown = false
-				end
-				return false
 			end
 
-			-- Update function called every frame
-			local function frameListener( event )
-				bgUpdate()
-				keyUpdate()
+			-- hide()
+			function scene:hide( event )
+
+				local sceneGroup = self.view
+				local phase = event.phase
+
+				if ( phase == "will" ) then
+					-- Code here runs when the scene is on screen (but is about to go off screen)
+
+				elseif ( phase == "did" ) then
+					-- Code here runs immediately after the scene goes entirely off screen
+
+				end
 			end
 
-			-- Listeners
-			Runtime:addEventListener( "key", onKeyEvent )
-			Runtime:addEventListener( "enterFrame", frameListener )
-			Runtime:addEventListener( "collision", onCollision )
 
-		end
+			-- destroy()
+			function scene:destroy( event )
 
-
-		-- show()
-		function scene:show( event )
-
-			local sceneGroup = self.view
-			local phase = event.phase
-
-			if ( phase == "will" ) then
-				-- Code here runs when the scene is still off screen (but is about to come on screen)
-
-			elseif ( phase == "did" ) then
-				-- Code here runs when the scene is entirely on screen
+				local sceneGroup = self.view
+				-- Code here runs prior to the removal of scene's view
 
 			end
-		end
-
-		-- hide()
-		function scene:hide( event )
-
-			local sceneGroup = self.view
-			local phase = event.phase
-
-			if ( phase == "will" ) then
-				-- Code here runs when the scene is on screen (but is about to go off screen)
-
-			elseif ( phase == "did" ) then
-				-- Code here runs immediately after the scene goes entirely off screen
-
-			end
-		end
 
 
-		-- destroy()
-		function scene:destroy( event )
+			-- -----------------------------------------------------------------------------------
+			-- Scene event function listeners
+			-- -----------------------------------------------------------------------------------
+			scene:addEventListener( "create", scene )
+			scene:addEventListener( "show", scene )
+			scene:addEventListener( "hide", scene )
+			scene:addEventListener( "destroy", scene )
+			-- -----------------------------------------------------------------------------------
 
-			local sceneGroup = self.view
-			-- Code here runs prior to the removal of scene's view
-
-		end
-
-
-		-- -----------------------------------------------------------------------------------
-		-- Scene event function listeners
-		-- -----------------------------------------------------------------------------------
-		scene:addEventListener( "create", scene )
-		scene:addEventListener( "show", scene )
-		scene:addEventListener( "hide", scene )
-		scene:addEventListener( "destroy", scene )
-		-- -----------------------------------------------------------------------------------
-
-		return scene
+			return scene
