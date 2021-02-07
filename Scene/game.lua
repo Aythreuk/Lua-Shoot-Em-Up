@@ -16,6 +16,7 @@ local uiGroup = display.newGroup()
 
 local wDown, sDown, aDown, dDown, spaceDown, fireCd															-- Keyboard variables
 local fireTimer, recoveryTimer
+local maxDifficulty = 5000
 
 
 -- Load additional libraries
@@ -25,7 +26,6 @@ local bulletModule = require("SpriteSheets.Bullets")
 local shipModule = require("SpriteSheets.Ships")
 local printTable = require("Scripts.printTable")
 local effectsModule = require("SpriteSheets.Effects")
-
 table.print = printTable
 
 
@@ -46,6 +46,25 @@ local explosion1sheet = graphics.newImageSheet("Images/explosion1_sheet.png",
 effectsModule.explosion1Options)
 local enemy5Sheet = graphics.newImageSheet("Images/enemy5_sheet.png",
 shipModule.enemy5Options)
+
+-- music
+audio.reserveChannels( 1 ) -- channel 1 reserved for music tracks
+audio.setVolume( 0.5, { channel = 1 } )
+local backgroundMusic = audio.loadStream( "Audio/Track1_Relaxing_Planet.mp3" )
+local backgroundMusicChannel = audio.play( backgroundMusic,
+{ channel=1, loops=-1, fadein=3000 } )
+print(audio.isChannelActive( 1 ))
+
+-- sfx
+local soundTable = {
+    explosion1_sound = audio.loadSound( "Audio/explosion1_sound.wav" ),
+    explosion2_sound = audio.loadSound( "Audio/explosion2_sound.wav" ),
+    hit1 = audio.loadSound( "Audio/hit1.wav" ),
+    hit2 = audio.loadSound( "Audio/hit2.wav" ),
+		shoot1 = audio.loadSound( "Audio/shoot1.wav" ),
+}
+
+
 
 -- Initialization
 physics.start()
@@ -81,7 +100,6 @@ function scene:create( event ) 																									-- create()
 	--custom fade in and out because I don't trust transition.fadeIn/Out anymore
 	local function customFade ( obj, direction )
 		-- direction 1 is fading out and 2 is fading in
-		print("Fading!")
 		if direction == 1 then
 			obj.alpha = obj.alpha - 0.1
 		elseif direction == 2 then
