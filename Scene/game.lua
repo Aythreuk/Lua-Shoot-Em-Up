@@ -62,7 +62,6 @@ function scene:create( event ) 																									-- create()
 
 	local sceneGroup = self.view
 	sceneGroup:insert(bgGroup)
-	sceneGroup:insert(coverGroup)
 	sceneGroup:insert(mainGroup)
 	sceneGroup:insert(uiGroup)
 	-- Code here runs when the scene is first created but has not yet appeared on screen
@@ -78,6 +77,20 @@ function scene:create( event ) 																									-- create()
 		"Images/background3.png",
 		"Images/background4.png",
 	}
+
+	--custom fade in and out because I don't trust transition.fadeIn/Out anymore
+	local function customFade ( obj, direction )
+		-- direction 1 is fading out and 2 is fading in
+		print("Fading!")
+		if direction == 1 then
+			obj.alpha = obj.alpha - 0.1
+		elseif direction == 2 then
+			obj.alpha = obj.alpha + 0.1
+		else
+			print("Some kind of error has occured")
+		end
+
+	end
 
 	-- bg constructor
 	local function createBg ( bgNum, x, y )
@@ -98,25 +111,16 @@ function scene:create( event ) 																									-- create()
 	local bg5 = createBg ( 1, bg1.x - bg1.width, bg1.y )
 	local bg6 = createBg ( 1, bg2.x - bg2.width, bg2.y )
 	--background cover
-	local function deleteCover ()
-		local bgCover = display.newRect( coverGroup, display.contentCenterX,
-		display.contentCenterY, display.contentWidth, display.contentHeight )
-		bgCover:toFront()
-		bgCover:setFillColor( 0, 0, 0, 1 )
-		transition.fadeOut( bgCover, { time=2000, onComplete = function ()
- 		display.remove( bgCover ) end} )
-	end
-
-deleteCover()
-
-local function createCover ()
-	local bgCover = display.newRect( coverGroup, display.contentCenterX,
+	local bgCover = display.newRect( bgGroup, display.contentCenterX,
 	display.contentCenterY, display.contentWidth, display.contentHeight )
 	bgCover:toFront()
-	bgCover:setFillColor( 0 )
-	transition.fadeIn( bgCover, { time=2000, onComplete = function ()
-	display.remove( bgCover ) end} )
-end
+	bgCover:setFillColor( 0, 0, 0, 1 )
+	local fadeOutClosure = function () customFade( bgCover, 1 ) end
+	local fadeInClosure = function () customFade( bgCover, 2 ) end
+	timer.performWithDelay( 100, fadeOutClosure, 10 )
+
+
+
 
 	--boundary constructor
 	local function makeBoundaries ( x )
@@ -747,6 +751,7 @@ end
 
 			-- new bg fade in
 			local function fadeInBg ( bgNum )
+			print("End")
 				lastX = bg1.x
 				lastY = bg1.y
 				bg1 = createBg( bgNum, lastX, lastY )
@@ -765,15 +770,19 @@ end
 				lastX = bg6.x
 				lastY = bg6.y
 				bg6 = createBg( bgNum, lastX, lastY )
-				deleteCover()
+				bgCover.alpha = 1
+				timer.performWithDelay( 200, fadeOutClosure, 10 )
 			end
 
 			-- old background fade out and pass value
-			local function fadeOutBg ( bgNum )
+			local function fadeOutBg ( bgNum ) -- Cover fades in
 				if (bgNum ~= currentBg) then
 					currentBg = bgNum
-					createCover()
-					timer.performWithDelay( 2000, fadeInBg( bgNum ))
+					bgCover.alpha = 0
+					print("Start")
+					timer.performWithDelay( 200, fadeInClosure, 10 )
+					local myClosure = function () fadeInBg( bgNum ) end
+					timer.performWithDelay( 2000, myClosure )
 				end
 			end
 
@@ -787,7 +796,7 @@ end
 					elseif rngNum == 3 then
 						EnemyClass.newDestroyer()
 					elseif rngNum == 4 then
-						--EnemyClass.newFrigate()
+						EnemyClass.newDestroyer()
 					else
 						print("An error has occured")
 					end
