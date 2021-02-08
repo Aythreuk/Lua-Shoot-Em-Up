@@ -64,8 +64,6 @@ local soundTable = {
   shoot1 = audio.loadSound( "Audio/shoot1.wav" ),
 }
 
-
-
 -- Initialization
 physics.start()
 physics.setGravity( 0, 0 )
@@ -862,6 +860,7 @@ function scene:create( event ) 																									-- create()
           if PlayerStats.bulletReady then
             local newLaser = display.newSprite( sceneGroup, bullet2Sheet,
             bulletModule.bullet2Sequence )
+            audio.play( soundTable["shoot1"])
             -- Add sprite listener
             newLaser:setSequence("normal")
             newLaser:play()
@@ -1047,6 +1046,7 @@ function scene:create( event ) 																									-- create()
               PlayerStats.score = math.floor(PlayerStats.score + obj2.worth)
               updateScore()
               enemyCount = enemyCount - 1
+              audio.play( soundTable["explosion1_sound"])
               if obj2.tm1 then timer.cancel(obj2.tm1) end
               if obj2.tm2 then timer.cancel(obj2.tm2) end
               if obj2.tm3 then timer.cancel(obj2.tm3) end
@@ -1067,6 +1067,9 @@ function scene:create( event ) 																									-- create()
               PlayerStats.score = math.floor(PlayerStats.score + obj1.worth)
               updateScore()
               enemyCount = enemyCount - 1
+              local randomExplosion = math.random( 1, 2 )
+              if randomExplosion == 1 then audio.play( soundTable["explosion1_sound"])
+              elseif randomExplosion == 2 then audio.play( soundTable["explosion2_sound"]) end
               if obj1.tm1 then timer.cancel(obj1.tm1) end
               if obj1.tm2 then timer.cancel(obj1.tm2) end
               if obj1.tm3 then timer.cancel(obj1.tm3) end
