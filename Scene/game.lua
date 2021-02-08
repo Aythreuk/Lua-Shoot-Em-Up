@@ -16,7 +16,7 @@ local uiGroup = display.newGroup()
 
 local wDown, sDown, aDown, dDown, spaceDown, fireCd															-- Keyboard variables
 local fireTimer, recoveryTimer
-local maxDifficulty = 5000
+local maxDifficulty, gameStage = 5000, 16
 
 
 -- Load additional libraries
@@ -379,6 +379,11 @@ function scene:create( event ) 																									-- create()
 		newLaser.rotation = -((math.atan( oppVar / adjVar )) * 180 / math.pi)
 	end
 
+  function EnemyClass.equalize ( a, b ) -- I swear it's not as mysterious as it sounds
+      if a >= b then a = b end
+      return a
+  end
+
 	----------------------------------------------------------------------- BOMBER
 	function EnemyClass.newBomber()
 		local self = setmetatable({}, EnemyClass)
@@ -391,13 +396,21 @@ function scene:create( event ) 																									-- create()
 		self.isFixedRotation = true
 		self.myName = "enemy"
 		self.stats = {} -- Had to declare these out here for scoping
+    self.stats.maxSpeed = 400
+    self.stats.speed = 100 + gameStage * 50
 		self.stats.maxFireRate = 40
+		self.stats.fireRate = 1 + gameStage * 5
 		self.stats.maxParticleSpeed = 40
-		self.stats.maxHealth = 15
-		self.stats.health = 0
-		self.stats.fireRate = 0
-		self.stats.particleSpeed = 0
-		self.worth = PlayerStats.score / 10
+		self.stats.particleSpeed = 1 + gameStage * 5
+		self.stats.maxHealth = 4
+		self.stats.health = 1 + gameStage
+		self.worth = 10 + gameStage * 10
+    self.stats.speed = EnemyClass.equalize( self.stats.speed, self.stats.maxSpeed )
+    self.stats.fireRate = EnemyClass.equalize( self.stats.fireRate, self.stats.maxFireRate )
+    self.stats.particleSpeed = EnemyClass.equalize( self.stats.particleSpeed, self.stats.maxParticleSpeed )
+    self.stats.health = EnemyClass.equalize( self.stats.health, self.stats.maxHealth )
+    print( "Speed: ", self.stats.speed, "\nFire rate: ", self.stats.fireRate,
+    "\nParticle speed: ", self.stats.particleSpeed, "\nHealth: ", self.stats.health )
 		-- Let's spawn on a random side
 		local randomSide = math.random( 1, 3 ) -- 1 is west, 2 is north, 3 is east
 		if (randomSide == 1) then
@@ -410,41 +423,10 @@ function scene:create( event ) 																									-- create()
 			self.x = display.contentWidth + 50
 			self.y = math.random( -50, display.contentHeight / 2 )
 		end
-		-- Assign random stats to enemy
-		local statTotal = 0
-		if self.worth < 3 then self.worth = 3 end
-		print(maxLimit)
-		repeat
-			-- Make sure there is at least one point in everything
-			local rand = math.random( 1, 3 )
-			statTotal = statTotal + rand
-			if self.stats.health == 0 then
-				self.stats.health = rand
-			elseif self.stats.fireRate == 0 then
-				self.stats.fireRate = rand
-			elseif self.stats.particleSpeed == 0 then
-				self.stats.particleSpeed = rand
-			else
-				-- Randomly dish out remaining points
-				local rand2 = 0
-				local rand2 = math.random( 1, 3 )
-				if (rand2 == 1 and self.stats.health < self.stats.maxHealth - 3) then
-					self.stats.health = self.stats.health + rand
-				elseif (rand2 == 2 and self.stats.fireRate < self.stats.maxFireRate - 3) then
-					self.stats.fireRate = self.stats.fireRate + rand
-				elseif (rand2 == 3 and
-				self.stats.particleSpeed < self.stats.maxParticleSpeed - 3) then
-					self.stats.particleSpeed = self.stats.particleSpeed + rand
-				else
-					print("There has been an error")
-				end
-			end
-		until (statTotal > self.worth)
-		print("Health: ", self.stats.health, "\nFire rate is: ", self.stats.fireRate,
-		"\nParticle speed is: ", self.stats.particleSpeed)
 		-- Move function
 		local function moveEnemy( enemy )
-			local randX, randY = math.random( -100, 100 ), math.random( -100, 100 )
+			local randX = math.random( -self.stats.speed, self.stats.speed )
+      local randY = math.random( -self.stats.speed, self.stats.speed )
 			enemy:setLinearVelocity( randX, randY )
 		end
 		-- Smooth out movement and keep on screen
