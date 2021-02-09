@@ -16,7 +16,7 @@ local uiGroup = display.newGroup()
 
 local wDown, sDown, aDown, dDown, spaceDown, fireCd															-- Keyboard variables
 local fireTimer, recoveryTimer
-local maxDifficulty, gameStage = 5000, 16
+local maxDifficulty, gameStage = 5000, 1
 
 
 -- Load additional libraries
@@ -79,6 +79,7 @@ function scene:create( event ) 																									-- create()
 
   local sceneGroup = self.view
   sceneGroup:insert(bgGroup)
+  sceneGroup:insert(coverGroup)
   sceneGroup:insert(mainGroup)
   sceneGroup:insert(uiGroup)
   -- Code here runs when the scene is first created but has not yet appeared on screen
@@ -105,13 +106,18 @@ function scene:create( event ) 																									-- create()
     else
       print("Some kind of error has occured")
     end
+    print( obj.alpha )
+  end
+
+  -- fancy screen text function
+  local function fancyText ()
 
   end
 
   -- bg constructor
   local function createBg ( bgNum, x, y )
     local self = {}
-    self = display.newImage( sceneGroup, bgImageCache[bgNum] )
+    self = display.newImage( bgGroup, bgImageCache[bgNum] )
     self.width = display.contentWidth * 2
     self.height = display.contentHeight * 2
     self.x = x
@@ -127,13 +133,14 @@ function scene:create( event ) 																									-- create()
   local bg5 = createBg ( 1, bg1.x - bg1.width, bg1.y )
   local bg6 = createBg ( 1, bg2.x - bg2.width, bg2.y )
   --background cover
-  local bgCover = display.newRect( bgGroup, display.contentCenterX,
+  local bgCover = display.newRect( coverGroup, display.contentCenterX,
   display.contentCenterY, display.contentWidth, display.contentHeight )
   bgCover:toFront()
   bgCover:setFillColor( 0, 0, 0, 1 )
   local fadeOutClosure = function () customFade( bgCover, 1 ) end
   local fadeInClosure = function () customFade( bgCover, 2 ) end
   timer.performWithDelay( 100, fadeOutClosure, 10 )
+
 
 
 
@@ -183,6 +190,11 @@ function scene:create( event ) 																									-- create()
   local uiScoreText = display.newText( uiGroup, "0000000", display.contentCenterX,
   25, "Fonts/Black_Ops_One/BlackOpsOne-Regular.ttf", 36 )
   uiScoreText:setFillColor( 0, 0, 0 )
+  -- screen text
+  local uiScreenText = display.newText( uiGroup, "Entering new area!", display.contentCenterX,
+  display.contentCenterY, "Fonts/Black_Ops_One/BlackOpsOne-Regular.ttf", 48 )
+  uiScreenText:setFillColor( 1, 0, 0 )
+  uiScreenText.isVisible = false
 
   -- Health bar constructor
   local function makeLifeBar ( x )
@@ -257,6 +269,9 @@ function scene:create( event ) 																									-- create()
 
 
   local function playerIsDefeated ()
+    local randomExplosion = math.random( 1, 2 )
+    if randomExplosion == 1 then audio.play( soundTable["explosion1_sound"])
+    elseif randomExplosion == 2 then audio.play( soundTable["explosion2_sound"]) end
     explosionEffect( playerSprite.x, playerSprite.y )
     display.remove( playerSprite )
   end
@@ -281,15 +296,21 @@ function scene:create( event ) 																									-- create()
   -- player got hit
   local function playerHit ()
     PlayerStats.currentLife = PlayerStats.currentLife - 1
+    updateHealth()
     if PlayerStats.currentLife >= 1 then
-      updateHealth()
+      local randomHit = math.random( 1, 2 )
+      if randomHit == 1 then
+        audio.play( soundTable["hit1"] )
+      elseif
+      randomHit == 2 then audio.play( soundTable["hit2"] )
+      end
       playerSprite.alpha = 0.5
       PlayerStats.recovering = true
       timer.performWithDelay( 2000, playerRecovered )
     elseif PlayerStats.currentLife <= 0 then
-      updateHealth()
       playerIsDefeated()
     end
+
   end
 
   -- sorting through raycast data
@@ -486,12 +507,19 @@ function scene:create( event ) 																									-- create()
       self.isFixedRotation = true
       self.myName = "enemy"
       self.stats = {} -- Had to declare these out here for scoping
-      self.stats.maxFireRate = 40
-      self.stats.maxParticleSpeed = 40
-      self.stats.maxHealth = 15
-      self.stats.health = 0
-      self.stats.fireRate = 0
-      self.stats.particleSpeed = 0
+      self.stats.maxSpeed = 400
+      self.stats.speed = 100 + gameStage * 50
+      self.stats.maxFireRate = 6000
+      self.stats.fireRate = gameStage * 1500 -- max should be 6000 (considering the possible game stages)
+      self.stats.maxHealth = 4
+      self.stats.health = 1 + gameStage
+      self.worth = 20 + gameStage * 10
+      -- max sure stats don't exceed maximum limits
+      self.stats.speed = EnemyClass.equalize( self.stats.speed, self.stats.maxSpeed )
+      self.stats.fireRate = EnemyClass.equalize( self.stats.fireRate, self.stats.maxFireRate )
+      self.stats.health = EnemyClass.equalize( self.stats.health, self.stats.maxHealth )
+      if self.stats.fireRate > 6000 then self.stats.fireRate = 6000 end
+      self.stats.fireRate = 10000 - self.stats.fireRate -- max atk speed should be 1per second
       self.tm1 = false
       self.tm2 = false
       self.tm3 = false
@@ -499,7 +527,8 @@ function scene:create( event ) 																									-- create()
       self.tm5 = false
       self.tm6 = false
       self.tm7 = false
-      self.worth =  PlayerStats.score / 10
+      print( "Speed: ", self.stats.speed, "\nFire rate: ", self.stats.fireRate,
+      "\nParticle speed: ", self.stats.particleSpeed, "\nHealth: ", self.stats.health )
       -- Let's spawn on a random side
       local randomSide = math.random( 1, 3 ) -- 1 is west, 2 is north, 3 is east
       if (randomSide == 1) then
@@ -512,37 +541,6 @@ function scene:create( event ) 																									-- create()
         self.x = display.contentWidth + 50
         self.y = math.random( -50, display.contentHeight / 2 )
       end
-      -- Assign random stats to enemy
-      local statTotal = 0
-      if self.worth < 3 then self.worth = 3 end
-      repeat
-        -- Make sure there is at least one point in everything
-        local rand = math.random( 1, 3 )
-        statTotal = statTotal + rand
-        if self.stats.health == 0 then
-          self.stats.health = rand
-        elseif self.stats.fireRate == 0 then
-          self.stats.fireRate = rand
-        elseif self.stats.particleSpeed == 0 then
-          self.stats.particleSpeed = rand
-        else
-          -- Randomly dish out remaining points
-          local rand2 = 0
-          local rand2 = math.random( 1, 3 )
-          if (rand2 == 1 and self.stats.health < self.stats.maxHealth - 3) then
-            self.stats.health = self.stats.health + rand
-          elseif (rand2 == 2 and self.stats.fireRate < self.stats.maxFireRate - 3) then
-            self.stats.fireRate = self.stats.fireRate + rand
-          elseif (rand2 == 3 and
-          self.stats.particleSpeed < self.stats.maxParticleSpeed - 3) then
-            self.stats.particleSpeed = self.stats.particleSpeed + rand
-          else
-            print("There has been an error")
-          end
-        end
-      until (statTotal > self.worth)
-      print("Health: ", self.stats.health, "\nFire rate is: ", self.stats.fireRate,
-      "\nParticle speed is: ", self.stats.particleSpeed)
       -- create "beam"
       self._BEAM = nil
       local x1, y1, x2, y2, x3, y3, beamRight
@@ -643,13 +641,11 @@ function scene:create( event ) 																									-- create()
         end
       end
       -- Call enemy behaviours
-      local newFireTime = 10000 - self.stats.fireRate * 100
       print("Laser will begin every: ", newFireTime)
-      local newParticleTime = 5000 - self.stats.particleSpeed * 50
       local myClosure1 = function() return moveEnemy () end
       self.tm1 = timer.performWithDelay( math.random( 4000, 6000 ), myClosure1, 0 )
       local myClosure2 = function() return warnPlayer () end
-      self.tm2 = timer.performWithDelay( newFireTime, myClosure2, 0 )
+      self.tm2 = timer.performWithDelay( self.stats.fireRate, myClosure2, 0 )
       local myClosure3 = function() return enemyUpdate ( self ) end
       self.tm3 = timer.performWithDelay( 250, myClosure3, 0 )
       local myClosure4 = function() return beamUpdate () end
@@ -671,7 +667,7 @@ function scene:create( event ) 																									-- create()
       mainGroup:insert( self )
       self:setSequence("normal")
       self:play()
-      physics.addBody( self, "dynamic" )
+      physics.addBody( self, "dynamic", { isSensor=true } )
       self.isFixedRotation = true
       self.myName = "enemy"
       self.stats = {} -- Had to declare these out here for scoping
@@ -740,8 +736,8 @@ function scene:create( event ) 																									-- create()
         self.rotation = -((math.atan( oppVar / adjVar )) * 180 / math.pi)
         transition.to( self, { y= -50, x = moveToX, time=self.stats.speed,
         onComplete = function()
-            enemyCount = enemyCount - 1
-            self:removeSelf()
+          enemyCount = enemyCount - 1
+          self:removeSelf()
         end} )
       end
       local newParticleTime = 5000 - self.stats.particleSpeed * 50
@@ -756,7 +752,19 @@ function scene:create( event ) 																									-- create()
 
       -- new bg fade in
       local function fadeInBg ( bgNum )
-        print("End")
+        audio.stop( 1 )
+        if gameStage == 2 then
+          backgroundMusic = audio.loadStream( "Audio/Track_2_Bold_Pads.mp3" )
+        elseif gameStage == 3 then
+          backgroundMusic = audio.loadStream( "Audio/Track_3_Unknown_Signals.mp3" )
+        elseif gameStage == 4 then
+          backgroundMusic = audio.loadStream( "Audio/Track_4_Hyper.mp3" )
+        else
+          print("An error occured with the music")
+        end
+        backgroundMusicChannel = audio.play( backgroundMusic,
+        { channel=1, loops=-1} )
+        audio.fade( { channel=1, time=2000, volume=0.5 } )
         lastX = bg1.x
         lastY = bg1.y
         bg1 = createBg( bgNum, lastX, lastY )
@@ -776,6 +784,7 @@ function scene:create( event ) 																									-- create()
         lastY = bg6.y
         bg6 = createBg( bgNum, lastX, lastY )
         bgCover.alpha = 1
+        local fadeOutClosure = function () customFade( bgCover, 1 ) end
         timer.performWithDelay( 200, fadeOutClosure, 10 )
       end
 
@@ -784,7 +793,8 @@ function scene:create( event ) 																									-- create()
         if (bgNum ~= currentBg) then
           currentBg = bgNum
           bgCover.alpha = 0
-          print("Start")
+          audio.fadeOut( { channel=1, time=2000 } )
+          local fadeInClosure = function () customFade( bgCover, 2 ) end
           timer.performWithDelay( 200, fadeInClosure, 10 )
           local myClosure = function () fadeInBg( bgNum ) end
           timer.performWithDelay( 2000, myClosure )
@@ -813,14 +823,17 @@ function scene:create( event ) 																									-- create()
           if PlayerStats.score <= 30 then
             EnemyClass.newBomber() -- no need to even call the function
             elseif PlayerStats.score > 30 and PlayerStats.score <= 100 then
-              spawnEnemies( 2, 2 ) -- possible ships to spawn, amount of ships
+              gameStage = 2
               fadeOutBg( 2 )
+              spawnEnemies( 2, 2 ) -- possible ships to spawn, amount of ships
             elseif PlayerStats.score > 100 and PlayerStats.score <= 200 then
-              spawnEnemies( 3, 2 )
+              gameStage = 3
               fadeOutBg( 3 )
+              spawnEnemies( 3, 2 )
             elseif PlayerStats.score > 200 and PlayerStats.score <= 300 then
-              spawnEnemies( 3, 3 )
+              gameStage = 4
               fadeOutBg( 4 )
+              spawnEnemies( 3, 3 )
             elseif PlayerStats.score > 300 and PlayerStats.score <= 500 then
               spawnEnemies( 4, 3 )
               --fadeOutBg( 4 )
@@ -1040,13 +1053,15 @@ function scene:create( event ) 																									-- create()
           -- player bullets hitting enemies
           if ( obj1.myName == "allyBullet" and obj2.myName == "enemy" ) then
             display.remove( obj1 )
-            obj2.stats.health = obj2.stats.health - 10
+            obj2.stats.health = obj2.stats.health - PlayerStats.damage
             if ( obj2.stats.health <= 0 ) then
               transition.cancel( obj2 )
               PlayerStats.score = math.floor(PlayerStats.score + obj2.worth)
               updateScore()
               enemyCount = enemyCount - 1
-              audio.play( soundTable["explosion1_sound"])
+              local randomExplosion = math.random( 1, 2 )
+              if randomExplosion == 1 then audio.play( soundTable["explosion1_sound"])
+              elseif randomExplosion == 2 then audio.play( soundTable["explosion2_sound"]) end
               if obj2.tm1 then timer.cancel(obj2.tm1) end
               if obj2.tm2 then timer.cancel(obj2.tm2) end
               if obj2.tm3 then timer.cancel(obj2.tm3) end
@@ -1058,10 +1073,14 @@ function scene:create( event ) 																									-- create()
               display.remove(obj2._BEAM)
               obj2:removeSelf()
               obj2 = nil
+            elseif ( obj2.stats.health > 0 )  then
+              local randomHit = math.random( 1, 2 )
+              if randomHit == 1 then audio.play( soundTable["hit1"] )
+              elseif randomHit == 2 then audio.play( soundTable["hit2"] ) end
             end
           elseif ( obj1.myName == "enemy" and obj2.myName == "allyBullet" ) then
             display.remove( obj2 )
-            obj1.stats.health = obj1.stats.health - 10
+            obj1.stats.health = obj1.stats.health - PlayerStats.damage
             if ( obj1.stats.health <= 0 ) then
               transition.cancel ( obj1 )
               PlayerStats.score = math.floor(PlayerStats.score + obj1.worth)
@@ -1081,6 +1100,10 @@ function scene:create( event ) 																									-- create()
               display.remove(obj1._BEAM)
               obj1:removeSelf()
               obj1 = nil
+            elseif ( obj1.stats.health > 0 )  then
+              local randomHit = math.random( 1, 2 )
+              if randomHit == 1 then audio.play( soundTable["hit1"] )
+              elseif randomHit == 2 then audio.play( soundTable["hit2"] ) end
             end
           end
 

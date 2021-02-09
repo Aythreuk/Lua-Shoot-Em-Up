@@ -22,6 +22,7 @@ PlayerStats =
 	fireRate = 500,
 	bulletReady = true,
 	rechargeRate = 1000,
-	score = 30,
+	score = 0,
 	recovering = false,
+	damage = 1,
 }
