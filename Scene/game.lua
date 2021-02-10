@@ -62,6 +62,8 @@ local soundTable = {
   hit1 = audio.loadSound( "Audio/hit1.wav" ),
   hit2 = audio.loadSound( "Audio/hit2.wav" ),
   shoot1 = audio.loadSound( "Audio/shoot1.wav" ),
+  button_002 = audio.loadSound( "Audio/button_002.wav" ),
+  incoming = audio.loadSound( "Audio/incoming.wav" ),
 }
 
 -- Initialization
@@ -110,8 +112,12 @@ function scene:create( event ) 																									-- create()
   end
 
   -- fancy screen text function
-  local function fancyText ()
-
+  local function textFlash ( textBox )
+    if textBox.isVisible == true then
+      textBox.isVisible = false
+    elseif textBox.isVisible == false then
+      textBox.isVisible = true
+    end
   end
 
   -- bg constructor
@@ -140,9 +146,6 @@ function scene:create( event ) 																									-- create()
   local fadeOutClosure = function () customFade( bgCover, 1 ) end
   local fadeInClosure = function () customFade( bgCover, 2 ) end
   timer.performWithDelay( 100, fadeOutClosure, 10 )
-
-
-
 
 
   --boundary constructor
@@ -195,6 +198,11 @@ function scene:create( event ) 																									-- create()
   display.contentCenterY, "Fonts/Black_Ops_One/BlackOpsOne-Regular.ttf", 48 )
   uiScreenText:setFillColor( 1, 0, 0 )
   uiScreenText.isVisible = false
+  local textFlashClosure = function () return textFlash ( uiScreenText ) end
+  timer.performWithDelay( 1000, textFlashClosure, 6 )
+  audio.play( soundTable["incoming"])
+  
+
 
   -- Health bar constructor
   local function makeLifeBar ( x )

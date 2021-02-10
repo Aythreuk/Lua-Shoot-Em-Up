@@ -15,7 +15,7 @@ settings =
     },
     window=
     {
-        defaultMode = "fullscreen",
+        defaultMode = "windowed",
         defaultViewWidth = 1920,
         defaultViewHeight = 1080,
         enableCloseButton = false,
