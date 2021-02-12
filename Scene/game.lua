@@ -113,6 +113,7 @@ function scene:create( event ) 																									-- create()
 
   -- fancy screen text function
   local function textFlash ( textBox )
+    audio.play( soundTable["incoming"])
     if textBox.isVisible == true then
       textBox.isVisible = false
     elseif textBox.isVisible == false then
@@ -199,10 +200,12 @@ function scene:create( event ) 																									-- create()
   uiScreenText:setFillColor( 1, 0, 0 )
   uiScreenText.isVisible = false
   local textFlashClosure = function () return textFlash ( uiScreenText ) end
-  timer.performWithDelay( 1000, textFlashClosure, 6 )
-  audio.play( soundTable["incoming"])
-  
-
+  -- arrow for aiming
+  local uiArrow = display.newImage( uiGroup, "Images/arrow.png",
+  display.contentCenterX, display.contentHeight - 350 )
+  uiArrow.alpha = 0.5
+  -- Entering new area...
+  timer.performWithDelay( 1000, textFlashClosure, 4 )
 
   -- Health bar constructor
   local function makeLifeBar ( x )
@@ -799,6 +802,9 @@ function scene:create( event ) 																									-- create()
       -- old background fade out and pass value
       local function fadeOutBg ( bgNum ) -- Cover fades in
         if (bgNum ~= currentBg) then
+          -- Entering new area...
+          timer.performWithDelay( 1000, textFlashClosure, 4 )
+          audio.play( soundTable["incoming"])
           currentBg = bgNum
           bgCover.alpha = 0
           audio.fadeOut( { channel=1, time=2000 } )
@@ -827,32 +833,40 @@ function scene:create( event ) 																									-- create()
       end
 
       local function gameLoop ()
+
         if enemyCount <= 0 then
           if PlayerStats.score <= 30 then
             EnemyClass.newBomber() -- no need to even call the function
             elseif PlayerStats.score > 30 and PlayerStats.score <= 100 then
               gameStage = 2
               fadeOutBg( 2 )
-              spawnEnemies( 2, 2 ) -- possible ships to spawn, amount of ships
+              local closure1 = function () return spawnEnemies( 2, 2 ) end
+              timer.performWithDelay( 6000, closure1 )
             elseif PlayerStats.score > 100 and PlayerStats.score <= 200 then
               gameStage = 3
               fadeOutBg( 3 )
-              spawnEnemies( 3, 2 )
+              local closure2 = function () return spawnEnemies( 2, 3 ) end
+              timer.performWithDelay( 6000, closure2 )
             elseif PlayerStats.score > 200 and PlayerStats.score <= 300 then
               gameStage = 4
               fadeOutBg( 4 )
-              spawnEnemies( 3, 3 )
+              local closure3 = function () return spawnEnemies( 3, 3 ) end
+              timer.performWithDelay( 6000, closure3 )
             elseif PlayerStats.score > 300 and PlayerStats.score <= 500 then
-              spawnEnemies( 4, 3 )
+              local closure4 = function () return spawnEnemies( 3, 4 ) end
+              timer.performWithDelay( 6000, closure4 )
               --fadeOutBg( 4 )
             elseif PlayerStats.score > 500 and PlayerStats.score <= 700 then
-              spawnEnemies( 4, 4 )
+              local closure5 = function () return spawnEnemies( 4, 4 ) end
+              timer.performWithDelay( 6000, closure5 )
               --fadeOutBg( 4 )
             elseif PlayerStats.score > 700 and PlayerStats.score <= 1000 then
-              spawnEnemies( 4, 5 )
+              local closure6 = function () return spawnEnemies( 4, 5 ) end
+              timer.performWithDelay( 6000, closure6 )
               --fadeOutBg( 4 )
             elseif PlayerStats.score > 1000 then
-              spawnEnemies( 4, 6 )
+              local closure7 = function () return spawnEnemies( 4, 6 ) end
+              timer.performWithDelay( 6000, closure7 )
               --fadeOutBg( 4 )
             end
           end
@@ -877,6 +891,16 @@ function scene:create( event ) 																									-- create()
           end
         end
 
+        local function pointArrow ()
+          if PlayerStats.aiming == -1 then
+            uiArrow.rotation = -45
+          elseif PlayerStats.aiming == 0 then
+            uiArrow.rotation = 0
+          elseif PlayerStats.aiming == 1 then
+            uiArrow.rotation = 45
+          end
+        end
+
         local function fireMain() 																		-- Fire main weapons
           if PlayerStats.bulletReady then
             local newLaser = display.newSprite( sceneGroup, bullet2Sheet,
@@ -888,11 +912,20 @@ function scene:create( event ) 																									-- create()
             physics.addBody( newLaser, "dynamic", { isSensor=true } )
             newLaser.isBullet = true
             newLaser.myName = "allyBullet"
-            newLaser.x = playerSprite.x
-            newLaser.y = playerSprite.y
             mainGroup:insert(newLaser)
             newLaser:toBack()
-            transition.to( newLaser, { y=-40, time=500,
+            newLaser.x = playerSprite.x
+            newLaser.y = playerSprite.y
+            if PlayerStats.aiming == -1 then
+              xVar = playerSprite.x - 1000
+              newLaser.rotation = -45
+            elseif PlayerStats.aiming == 0 then
+              xVar = playerSprite.x
+            elseif PlayerStats.aiming == 1 then
+              xVar = playerSprite.x + 1000
+              newLaser.rotation = 45
+            end
+            transition.to( newLaser, { x = xVar, y=-50, time=500,
             onComplete = function() display.remove( newLaser ) end} )
             PlayerStats.bulletReady = false
             PlayerStats.currentAmmo = PlayerStats.currentAmmo - 1
@@ -911,7 +944,6 @@ function scene:create( event ) 																									-- create()
         local function playerFireTimer ()
           PlayerStats.bulletReady = true
           fireTimer = nil
-          print("Refreshed the bullet")
         end
 
         -- adjust global speeds
@@ -962,6 +994,17 @@ function scene:create( event ) 																									-- create()
           bg4:translate( -(PlayerSpeed.xSpeed / 20), PlayerSpeed.ySpeed / 5)
           bg5:translate( -(PlayerSpeed.xSpeed / 20), PlayerSpeed.ySpeed / 5)
           bg6:translate( -(PlayerSpeed.xSpeed / 20), PlayerSpeed.ySpeed / 5)
+          -- also update the arrow position
+          if PlayerStats.aiming == -1 then
+            uiArrow.x = playerSprite.x - playerSprite.width
+            uiArrow.y = playerSprite.y - playerSprite.height
+          elseif PlayerStats.aiming == 0 then
+            uiArrow.x = playerSprite.x
+            uiArrow.y = playerSprite.y - playerSprite.height
+          elseif PlayerStats.aiming == 1 then
+            uiArrow.x = playerSprite.x + playerSprite.width
+            uiArrow.y = playerSprite.y - playerSprite.height
+          end
           -- auto slow down moved to here so it slows down when you die and no longer
           -- have controls
           if (PlayerSpeed.xSpeed < 0 and not aDown and not dDown) then
@@ -1160,6 +1203,20 @@ function scene:create( event ) 																									-- create()
           end
           if (event.phase == "up" and event.keyName == "space") then
             spaceDown = false
+          end
+          -- q button
+          if (event.phase == "down" and event.keyName == "q") then
+            if (PlayerStats.aiming > -1 and PlayerStats.aiming <= 1) then
+              PlayerStats.aiming = PlayerStats.aiming - 1
+              pointArrow()
+            end
+          end
+          -- e button
+          if (event.phase == "down" and event.keyName == "e") then
+            if (PlayerStats.aiming >= -1 and PlayerStats.aiming < 1) then
+              PlayerStats.aiming = PlayerStats.aiming + 1
+              pointArrow()
+            end
           end
           return false
         end

@@ -25,4 +25,5 @@ PlayerStats =
 	score = 0,
 	recovering = false,
 	damage = 1,
+	aiming = 0,
 }
