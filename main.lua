@@ -4,4 +4,4 @@ require('globals')
 
 display.setStatusBar( display.HiddenStatusBar )
 
-composer.gotoScene( "Scene.game")
+composer.gotoScene( "Scene.menu")

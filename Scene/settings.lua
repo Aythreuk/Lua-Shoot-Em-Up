@@ -13,7 +13,7 @@ local scene = composer.newScene()
 -- Exit game function
 local function backEvent( event )
     if ( "ended" == event.phase ) then
-        composer.gotoScene("scene.menu")
+        composer.gotoScene("Scene.menu")
     end
 end
 
@@ -26,6 +26,9 @@ function scene:create( event )
 
 	local sceneGroup = self.view
 	-- Code here runs when the scene is first created but has not yet appeared on screen
+
+  local bg = display.newImage( sceneGroup, "Images/settings_background.png",
+  display.contentCenterX, display.contentCenterY)
 
     -- Button constructor
     local function makeButton ( label, event, x, y )
@@ -41,8 +44,8 @@ function scene:create( event )
         width = 200,
         height = 40,
         cornerRadius = 2,
-        fillColor = { default={1,0,0,1}, over={1,0.1,0.7,0.4} },
-        strokeColor = { default={1,0.4,0,1}, over={0.8,0.8,1,1} },
+        fillColor = { default={ 0.8, 0.8, 1, 1 }, over={1,0.1,0.7,0.4} },
+        strokeColor = { default={ 0.4, 0.4, 0.6 ,1 }, over={0.8,0.8,1,1} },
         strokeWidth = 4
       }
     )
