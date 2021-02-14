@@ -283,6 +283,8 @@ function scene:create( event ) 																									-- create()
     local randomExplosion = math.random( 1, 2 )
     if randomExplosion == 1 then audio.play( soundTable["explosion1_sound"])
     elseif randomExplosion == 2 then audio.play( soundTable["explosion2_sound"]) end
+    composer.setVariable( "finalScore", PlayerStats.score )
+    composer.gotoScene( "highscores", { time=800, effect="crossFade" } )
     explosionEffect( playerSprite.x, playerSprite.y )
     display.remove( playerSprite )
   end

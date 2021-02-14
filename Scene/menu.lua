@@ -29,6 +29,12 @@ local function newGameEvent( event )                                            
   end
 end
 
+local function scoresEvent ( event )
+  if ( "ended" == event.phase ) then
+    composer.gotoScene("Scene.scores")
+  end
+end
+
 -- -----------------------------------------------------------------------------------
 -- Scene event functions
 -- -----------------------------------------------------------------------------------
@@ -88,8 +94,10 @@ end
 -- Create buttons
 local exitButton = makeButton( "Exit", exitEvent, display.contentCenterX,
 scrnHeight - 100)
-local settinsButton = makeButton( "Settings", settingsEvent, display.contentCenterX,
-scrnHeight - 200)
+local settingsButton = makeButton( "Settings", settingsEvent, display.contentCenterX,
+scrnHeight - 166)
+local scoresButton = makeButton( "Highscores", scoresEvent, display.contentCenterX,
+scrnHeight - 233)
 local newGameButton = makeButton( "New Game", newGameEvent, display.contentCenterX,
 scrnHeight - 300)
 end
