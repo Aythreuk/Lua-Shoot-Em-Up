@@ -108,7 +108,6 @@ function scene:create( event ) 																									-- create()
     else
       print("Some kind of error has occured")
     end
-    print( obj.alpha )
   end
 
   -- fancy screen text function
@@ -284,7 +283,7 @@ function scene:create( event ) 																									-- create()
     if randomExplosion == 1 then audio.play( soundTable["explosion1_sound"])
     elseif randomExplosion == 2 then audio.play( soundTable["explosion2_sound"]) end
     composer.setVariable( "finalScore", PlayerStats.score )
-    composer.gotoScene( "highscores", { time=800, effect="crossFade" } )
+    composer.gotoScene( "Scene.scores", { time=800, effect="crossFade" } )
     explosionEffect( playerSprite.x, playerSprite.y )
     display.remove( playerSprite )
   end
@@ -299,6 +298,7 @@ function scene:create( event ) 																									-- create()
       end
     end
   end
+  updateHealth()
 
   -- player recovered
   local function playerRecovered ()
@@ -379,38 +379,6 @@ function scene:create( event ) 																									-- create()
     newLaser.rotation = -((math.atan( oppVar / adjVar )) * 180 / math.pi)
   end
 
-  -- Runner attack function
-  function EnemyClass.runnerFire ( enemy, newParticleTime, x, y, randX, randomSide )
-    print( particleTime )
-    local newLaser = display.newSprite( sceneGroup, bullet1Sheet,
-    bulletModule.bullet1Sequence )
-    newLaser.x = x
-    newLaser.y = y
-    newLaser:setSequence("normal")
-    newLaser:play()
-    physics.addBody( newLaser, "dynamic", { isSensor=true } )
-    newLaser.isBullet = true
-    newLaser.myName = "enemyBullet"
-    mainGroup:insert(newLaser)
-    newLaser:toBack()
-    if (randX and randomSide == 1) then
-      randX = randX + 300
-    elseif (randX and randomSide == 2) then
-      randX = randX - 300
-    end
-    if randX == false then
-      if randomSide == 1 then randX = x + math.random( 500, 1000 ) end
-      if randomSide == 2 then randX = x + -(math.random( 500, 1000 )) end
-    end
-    transition.to( newLaser, { y= display.contentHeight + 50,
-    x = randX, time=newParticleTime,
-    onComplete = function() display.remove( newLaser ) end} )
-    newLaser.isFixedRotation = true
-    local adjVar = display.contentHeight - y
-    local oppVar = randX - x
-    newLaser.rotation = -((math.atan( oppVar / adjVar )) * 180 / math.pi)
-  end
-
   -- equalize stats with max
   function EnemyClass.equalize ( a, b ) -- I swear it's not as mysterious as it sounds
     if a >= b then a = b end
@@ -462,6 +430,37 @@ function scene:create( event ) 																									-- create()
     end
   end
 
+  -- Runner attack function
+  function EnemyClass.runnerFire ( enemy, newParticleTime, x, y, randX, randomSide )
+    print( particleTime )
+    local newLaser = display.newSprite( sceneGroup, bullet1Sheet,
+    bulletModule.bullet1Sequence )
+    newLaser.x = x
+    newLaser.y = y
+    newLaser:setSequence("normal")
+    newLaser:play()
+    physics.addBody( newLaser, "dynamic", { isSensor=true } )
+    newLaser.isBullet = true
+    newLaser.myName = "enemyBullet"
+    mainGroup:insert(newLaser)
+    newLaser:toBack()
+    if (randX and randomSide == 1) then
+      randX = randX + 300
+    elseif (randX and randomSide == 2) then
+      randX = randX - 300
+    end
+    if randX == false then
+      if randomSide == 1 then randX = x + math.random( 500, 1000 ) end
+      if randomSide == 2 then randX = x + -(math.random( 500, 1000 )) end
+    end
+    transition.to( newLaser, { y= display.contentHeight + 50,
+    x = randX, time=newParticleTime,
+    onComplete = function() display.remove( newLaser ) end} )
+    newLaser.isFixedRotation = true
+    local adjVar = display.contentHeight - y
+    local oppVar = randX - x
+    newLaser.rotation = -((math.atan( oppVar / adjVar )) * 180 / math.pi)
+  end
 
   ----------------------------------------------------------------------- BOMBER
   function EnemyClass.newBomber()
@@ -684,16 +683,23 @@ function scene:create( event ) 																									-- create()
       self.isFixedRotation = true
       self.myName = "enemy"
       self.stats = {} -- Had to declare these out here for scoping
-      self.stats.particleSpeed = 0
-      self.stats.maxParticleSpeed = 40
-      self.stats.maxBullets = 10
-      self.stats.bullets = 0
-      self.stats.speed = 0
-      self.stats.maxSpeed = 40
+      self.stats.maxSpeed = 2000
+      self.stats.speed = 100 + gameStage * 50
+      self.stats.maxBullets = 6
+      self.stats.bullets = 2 + gameStage
+      self.stats.maxParticleSpeed = 2000
+      self.stats.particleSpeed = gameStage * 500 -- max should be 2000
       self.stats.health = 1
       self.tm1 = false
-      self.worth =  PlayerStats.score / 10
-      if self.worth < 3 then self.worth = 3 end
+      self.worth = 10 + gameStage * 10
+      -- max sure stats don't exceed maximum limits
+      self.stats.particleSpeed = EnemyClass.equalize( self.stats.particleSpeed, self.stats.maxParticleSpeed )
+      if self.stats.speed > 2000 then self.stats.speed = self.stats.maxSpeed end
+      if self.stats.particleSpeed > 2000 then self.stats.particleSpeed = 2000 end
+      self.stats.particleSpeed = 5000 - self.stats.particleSpeed -- max speed should be 3000
+      self.stats.speed = 6000 - self.stats.speed
+      print( "Speed: ", self.stats.speed, "\nBullets: ", self.stats.bullets,
+      "\nParticle speed: ", self.stats.particleSpeed, "\nHealth: ", self.stats.health )
       -- Let's spawn on a random side
       local randomSide = math.random( 1, 2 ) -- 1 is west, 2 is east
       if (randomSide == 1) then
@@ -703,39 +709,7 @@ function scene:create( event ) 																									-- create()
         self.x = display.contentWidth + 50
         self.y = math.random( -50, display.contentHeight / 2 )
       end
-      -- Assign random stats to enemy
-      local statTotal = 0
-      repeat
-        -- Make sure there is at least one point in everything
-        local rand = math.random( 1, 3 )
-        statTotal = statTotal + rand
-        if self.stats.particleSpeed == 0 then
-          self.stats.particleSpeed = rand
-        elseif self.stats.bullets == 0 then
-          self.stats.bullets = rand
-        elseif self.stats.speed == 0 then
-          self.stats.speed = rand
-        else
-          -- Randomly dish out remaining points
-          local rand2 = 0
-          local rand2 = math.random( 1, 2 )
-          if (rand2 == 1 and self.stats.bullets < self.stats.maxBullets) then
-            self.stats.bullets = self.stats.bullets + 1
-          elseif (rand2 == 2 and
-          self.stats.particleSpeed < self.stats.maxParticleSpeed - 3) then
-            self.stats.particleSpeed = self.stats.particleSpeed + rand
-          elseif (rand2 == 3 and
-          self.stats.speed < self.stats.maxSpeed - 3) then
-            self.stats.speed = self.stats.speed + rand
-          else
-            print("There has been an error")
-          end
-        end
-      until (statTotal > self.worth)
-      print("Health: ", self.stats.health, "\nBullet amount is: ", self.stats.bullets,
-      "\nParticle speed is: ", self.stats.particleSpeed)
       -- Move function
-      self.stats.speed = 5000 - self.stats.speed * 50
       local function moveEnemy()
         local moveToX
         if randomSide == 1 then
@@ -753,15 +727,17 @@ function scene:create( event ) 																									-- create()
           self:removeSelf()
         end} )
       end
-      local newParticleTime = 5000 - self.stats.particleSpeed * 50
       -- Call enemy behaviours
       moveEnemy()
-      local myClosure = function() return EnemyClass.runnerFire ( self, newParticleTime,
+      local myClosure = function() return EnemyClass.runnerFire ( self, self.stats.particleSpeed,
         self.x, self.y, false, randomSide ) end
         self.tm5 = timer.performWithDelay( 1000, myClosure, 3 )
-        local statTotal = 0
         return self
       end
+
+      EnemyClass.newRunner()
+      EnemyClass.newRunner()
+      EnemyClass.newRunner()
 
       -- new bg fade in
       local function fadeInBg ( bgNum )
@@ -1225,8 +1201,10 @@ function scene:create( event ) 																									-- create()
 
         -- Update function called every frame
         local function frameListener( event )
-          bgUpdate()
-          keyUpdate()
+          if PlayerStats.currentLife > 0 then
+            bgUpdate()
+            keyUpdate()
+          end
         end
 
         -- Listeners
@@ -1263,7 +1241,7 @@ function scene:create( event ) 																									-- create()
 
         elseif ( phase == "did" ) then
           -- Code here runs immediately after the scene goes entirely off screen
-
+          composer.removeScene( "Scene.game" )
         end
       end
 

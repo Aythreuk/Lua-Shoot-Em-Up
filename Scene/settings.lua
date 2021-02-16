@@ -47,24 +47,24 @@ function scene:create( event )
   local function res1Event( event )
     if ( "ended" == event.phase ) then
       --native.setProperty( “windowSize”, { width=2560, height=1440 } )
-      native.setProperty( "viewWidth", 2560 )
-      native.setProperty( "viewHeight", 1440 )
+      native.setProperty( "defaultViewWidth", 2560 )
+      native.setProperty( "defaultViewHeight", 1440 )
     end
   end
 
   local function res2Event( event )
     if ( "ended" == event.phase ) then
       --native.setProperty( “windowSize”, { width=1920, height=1080 } )
-      native.setProperty( "viewWidth", 2560 )
-      native.setProperty( "viewHeight", 1440 )
+      native.setProperty( "defaultViewWidth", 2560 )
+      native.setProperty( "defaultViewHeight", 1440 )
     end
   end
 
   local function res3Event( event )
     if ( "ended" == event.phase ) then
       --native.setProperty( “windowSize”, { width=1440, height=900 } )
-      native.setProperty( "viewWidth", 2560 )
-      native.setProperty( "viewHeight", 1440 )
+      native.setProperty( "defaultViewWidth", 2560 )
+      native.setProperty( "defaultViewHeight", 1440 )
     end
   end
 
@@ -88,22 +88,20 @@ function scene:create( event )
     }
   )
 
+  -- Create buttons
+  local backButton = makeButton( "Back", backEvent, display.contentCenterX,
+  display.contentHeight - 100)
+  local resButton = makeButton( "Resolution", resEvent, display.contentCenterX,
+  display.contentHeight - 200)
+  local res1Button = makeButton( "2560x1440", res1Event, display.contentCenterX + 300,
+  display.contentHeight - 100)
+  local res2Button = makeButton( "1920x1080", res2Event, display.contentCenterX + 300,
+  display.contentHeight - 200)
+  local res3Button = makeButton( "1440×900", res3Event, display.contentCenterX + 300,
+  display.contentHeight - 300)
+
   sceneGroup:insert( self )
 end
-
--- Create buttons
-local backButton = makeButton( "Back", backEvent, display.contentCenterX,
-display.contentHeight - 100)
-local resButton = makeButton( "Resolution", resEvent, display.contentCenterX,
-display.contentHeight - 200)
-local res1Button = makeButton( "2560x1440", res1Event, display.contentCenterX + 300,
-display.contentHeight - 100)
-local res2Button = makeButton( "1920x1080", res2Event, display.contentCenterX + 300,
-display.contentHeight - 200)
-local res3Button = makeButton( "1440×900", res3Event, display.contentCenterX + 300,
-display.contentHeight - 300)
-
-
 end
 
 
@@ -131,10 +129,10 @@ function scene:hide( event )
 
   if ( phase == "will" ) then
     -- Code here runs when the scene is on screen (but is about to go off screen)
-    composer.removeScene( "scene.settings" )
+
   elseif ( phase == "did" ) then
     -- Code here runs immediately after the scene goes entirely off screen
-
+    composer.removeScene( "Scene.settings" )
   end
 end
 

@@ -15,7 +15,7 @@ PlayerStats =
 {
 	maxLife = 10,
 	minLife = 0,
-	currentLife = 10,
+	currentLife = 1,
 	maxAmmo = 10,
 	minAmmo = 0,
 	currentAmmo = 10,
