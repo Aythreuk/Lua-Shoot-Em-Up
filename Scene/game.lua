@@ -66,6 +66,24 @@ local soundTable = {
   incoming = audio.loadSound( "Audio/incoming.wav" ),
 }
 
+-- Player ammo, life, status, etc.
+local PlayerStats =
+{
+	maxLife = 10,
+	minLife = 0,
+	currentLife = 1,
+	maxAmmo = 10,
+	minAmmo = 0,
+	currentAmmo = 10,
+	fireRate = 500,
+	bulletReady = true,
+	rechargeRate = 1000,
+	score = 0,
+	recovering = false,
+	damage = 1,
+	aiming = 0,
+}
+
 -- Initialization
 physics.start()
 physics.setGravity( 0, 0 )
@@ -283,7 +301,7 @@ function scene:create( event ) 																									-- create()
     if randomExplosion == 1 then audio.play( soundTable["explosion1_sound"])
     elseif randomExplosion == 2 then audio.play( soundTable["explosion2_sound"]) end
     composer.setVariable( "finalScore", PlayerStats.score )
-    composer.gotoScene( "Scene.scores", { time=800, effect="crossFade" } )
+    composer.gotoScene( "Scene.scores", { time=2000, effect="crossFade" } )
     explosionEffect( playerSprite.x, playerSprite.y )
     display.remove( playerSprite )
   end
@@ -1241,7 +1259,17 @@ function scene:create( event ) 																									-- create()
 
         elseif ( phase == "did" ) then
           -- Code here runs immediately after the scene goes entirely off screen
+          timer.cancelAll()
+          transition.cancelAll()
+          audio.stop()
+          for s,v in pairs( soundTable ) do
+            audio.dispose( soundTable[s] )
+            soundTable[s] = nil
+          end
+          audio.dispose( backgroundMusicChannel )
+          audio.dispose( soundTable )
           composer.removeScene( "Scene.game" )
+
         end
       end
 
@@ -1251,6 +1279,7 @@ function scene:create( event ) 																									-- create()
 
         local sceneGroup = self.view
         -- Code here runs prior to the removal of scene's view
+
 
       end
 
